@@ -22,12 +22,12 @@ void Acceleration(const double *, const double *, double *, const int *, const i
 
 void Save_vec(FILE *, const double *, const double *, const int);
 
-void Save_data(FILE *, const double *, const double *, const int *, const int, const int, const int, const int, const int, MPI_Status);
+void Save_data(const double *, const double *, const int *, const int, const int, const int, const int, const int, MPI_Status);
 
 void Euler(double *, double *, const double *, double *, const double, const int, function, const int *, const int, const int, const int, const int, MPI_Status);
 
 void PEFRL(double *, double *, const double *, double *, const double, const int, function, const int *, const int, const int, const int, const int, MPI_Status);
 
-void Evolution(FILE *, double *, double *, const double *, double *, const int *, const int, const int, const int, const int, const int, MPI_Status, const int, const double, const int, function, Integrator);
+void Evolution(double *, double *, const double *, double *, const int *, const int, const int, const int, const int, const int, MPI_Status, const int, const double, const int, function, Integrator);
 
 #endif // NBODIES_H_

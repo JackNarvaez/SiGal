@@ -8,15 +8,39 @@ The N-Body problem using MPI
 #include <string.h>
 #include "NBodies.h"
 
+void read_parameters(double prmts[])
+{
+    FILE *File;
+    File = fopen("./input", "r");
+    char line[256];
+    int row = 0;
+    while (fgets(line, sizeof(line), File)) {
+        if (line[0] == '\n' || line[0] == '#')
+            continue;
+        else {
+            char *token;
+            token = strtok(line, "\t");
+            prmts[row] = atof(token);
+            row += 1;
+        }
+    }
+    fclose(File);
+
+}
+
 int main(int argc, char *argv[]) {
     int pId;                        // Process rank
     int nP;                         // Number of processes
     int tag{0};                     // Tag message
     int root{0};                    // Root process
-    int steps = atoi(argv[1]);      // Evolution steps
-    double dt = atof(argv[2]);      // Time step
-    int jump  = atoi(argv[3]);      // Data storage interval
-    int N     = atoi(argv[4]);      // Total number of bodies
+    double prmts[7];
+
+    read_parameters(prmts);
+    
+    int steps = (int)prmts[5];      // Evolution steps
+    double dt = prmts[3];      // Time step
+    int jump  = (int) prmts[6];      // Data storage interval
+    int N     = (int) prmts[0];      // Total number of bodies
     MPI_Status status;
     body bd;                        // Bodies
 
@@ -43,14 +67,13 @@ int main(int argc, char *argv[]) {
     for (int ii = 0; ii < 3*len[pId]; ii++) bd.a[ii] = 0.0;
 
     // Read local particles information
-    char input[16] = "data";
+    char input[16] = "./Data/data";
     sprintf(input + strlen(input), "%d.txt", pId);
     read_data(input, bd.r, bd.v, bd.m);
     double start = MPI_Wtime();
 
     // Save positions
-    FILE *Data;
-    Evolution(Data, bd.r, bd.v, bd.m, bd.a, len, N, tag, pId, nP, root, status, steps, dt, jump, Acceleration, PEFRL);
+    Evolution(bd.r, bd.v, bd.m, bd.a, len, N, tag, pId, nP, root, status, steps, dt, jump, Acceleration, PEFRL);
     
     if (pId == root) {
         double end = MPI_Wtime();

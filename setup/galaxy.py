@@ -1,4 +1,4 @@
-from numpy import array, zeros, random, sqrt, exp, pi, sin, cos, arctan
+from numpy import array, zeros, random, sqrt, exp, pi, sin, cos, arctan, loadtxt
 import scipy.integrate as integrate
 from scipy.optimize import fsolve
 import matplotlib.pyplot as plt
@@ -105,7 +105,7 @@ def Data(pId, size, max_mass, BHM, BHposition, ini_radius, beta, alpha):
        beta         : Inclination
        alpha        : Angle in the x,y plane
     ------------------------------------------------------------------------"""
-    data = open("./../src/data"+str(pId)+".txt", "w")
+    data = open("./../Data/data"+str(pId)+".txt", "w")
     data.write("#\t"+str(size)+"\n")
     if pId == 0:
         data.write(str(BHposition[0])+"\t"+str(BHposition[1])+"\t"+str(BHposition[2])+"\t0\t0\t0\t"+str(BHM)+"\n")
@@ -122,6 +122,23 @@ def Data(pId, size, max_mass, BHM, BHposition, ini_radius, beta, alpha):
                    str("{:.6f}".format(masses[ii]))+"\n")
     data.close()
 
+def read_parameters(prmts):
+    """------------------------------------------------------------------------
+    Parameters
+    ---------------------------------------------------------------------------
+    Prmts:
+    0       # Nb: Number of bodies in the galaxy
+    1       # i : Inclination of the galaxy (rads/pi)
+    2       # w : Angle in the xy plane of the galaxy (rads/pi)
+    3       # dt: Time step
+    4       # r : Radius of Galaxy (AU)
+    5       # steps: Evolution steps
+    6       # jump: Data storage interval
+    ------------------------------------------------------------------------"""
+    data = loadtxt("../input")
+    return data[prmts]
+
+
 # ----------------------------MAIN-------------------------------- #
 #MPI Initialize 
 comm = MPI.COMM_WORLD
@@ -132,17 +149,14 @@ G = 4*pi**2
 # Mass of the N bodies.
 max_mass = 50. # Solar masses
 # Parameters of the galaxy plane orientation 
-beta=pi*float(argv[2])     #Inclination
-alpha=pi*float(argv[3])    #Angle in the plain x,y
-# Initial radius of the distribution
-ini_radius = float(argv[4]) #au
+N, i, w, ini_radius = read_parameters([0, 1, 2, 4])
+beta=pi*i     #Inclination
+alpha=pi*w    #Angle in the plain x,y
 # Supermassive Central Black Hole data
 BHM = 1.e6 # Solar masses
 BHposition = array([0., 0., 0.]) # Location of the SBH
 # Random Seed
 random.seed(pId)
-# Number of bodies.
-N = int(argv[1])
 # Partition between processes
 teil = float(N)/nP
 size = int(teil*(pId+1))-int(teil*pId)

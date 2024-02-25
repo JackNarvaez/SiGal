@@ -3,11 +3,27 @@ import matplotlib.pyplot as plt
 plt.style.use('dark_background')
 import mpl_toolkits.mplot3d.axes3d as p3
 import matplotlib.animation as animation
-from sys import argv
 
-N = int(argv[1])    # Number of particles
-dt = float(argv[2])    # Size step
-jump = int(argv[3])    # Size jump
+def read_parameters(prmts):
+    """------------------------------------------------------------------------
+    Parameters
+    ---------------------------------------------------------------------------
+    Prmts:
+    0       # Nb: Number of bodies in the galaxy
+    1       # i : Inclination of the galaxy (rads/pi)
+    2       # w : Angle in the xy plane of the galaxy (rads/pi)
+    3       # dt: Time step
+    4       # r : Radius of Galaxy (AU)
+    5       # steps: Evolution steps
+    6       # jump: Data storage interval
+    ------------------------------------------------------------------------"""
+    data = loadtxt("../input")
+    return data[prmts]
+
+
+N, dt, jump= read_parameters([0, 3, 6])
+N = int(N)
+jump = int(jump)
 
 x, y, z, m = loadtxt("../Data/Evolution.txt", unpack=1)    # Evolution
 steps = x.size // N # Printed steps
@@ -22,6 +38,7 @@ def update_scatter(num, scatter, message):
     scatter._offsets3d = (x[num*N:(num+1)*N], y[num*N:(num+1)*N], z[num*N:(num+1)*N])
     return scatter, message
 
+
 # Attaching 3D axis to the figure
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
@@ -31,20 +48,18 @@ message = ax.text2D(0.00, 0.9, "", transform=ax.transAxes)
 # Creating a scatter plot for N bodies
 scatter = ax.scatter(initial_x, initial_y, initial_z, c='white', marker='.')
 
-boundaries = int(argv[4])
-
 # Setting the axes properties
-if boundaries:
-    ax.set_xlim3d([-boundaries, boundaries])
-    ax.set_ylim3d([-boundaries, boundaries])
-    ax.set_zlim3d([-boundaries, boundaries])
-    ax.set_xlabel('x [au]')
-    ax.set_ylabel('y [au]')
-    ax.set_zlabel('z [au]')
+# if boundaries:
+#     ax.set_xlim3d([-boundaries, boundaries])
+#     ax.set_ylim3d([-boundaries, boundaries])
+#     ax.set_zlim3d([-boundaries, boundaries])
+#     ax.set_xlabel('x [au]')
+#     ax.set_ylabel('y [au]')
+#     ax.set_zlabel('z [au]')
 
 # Creating the Animation object
 scatter_ani = animation.FuncAnimation(fig, update_scatter, frames=steps, fargs=(scatter, message),
                                       interval=1, blit=True)
 
-scatter_ani.save('Evolution.gif', writer='pillow', fps=30)
+scatter_ani.save('../Data/Evolution.gif', writer='pillow', fps=30)
 plt.show()

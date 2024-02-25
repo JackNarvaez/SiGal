@@ -146,7 +146,7 @@ void Save_vec(FILE *File, const double *Pos, const double *Mass, const int N) {
     }
 }
 
-void Save_data(FILE *File, const double * Pos, const double * Mass, const int *len, const int N, const int tag, const int pId, const int nP, const int root, MPI_Status status){
+void Save_data(const double * Pos, const double * Mass, const int *len, const int N, const int tag, const int pId, const int nP, const int root, MPI_Status status){
     /*---------------------------------------------------------------------------
     Saves positions and masses of all bodies in Evolution.txt.
     -----------------------------------------------------------------------------
@@ -165,7 +165,8 @@ void Save_data(FILE *File, const double * Pos, const double * Mass, const int *l
 
     // Collect results in <root> process.
     if(pId==root){
-        File = fopen("../Data/Evolution.txt", "a");
+        FILE *File;
+        File = fopen("./Data/Evolution.txt", "a");
         Save_vec(File, Pos, Mass, len[root]);
         double * TempP = (double *) malloc(3*(N/nP+1)*sizeof(double));
         double * TempM = (double *) malloc((N/nP+1)*sizeof(double));
@@ -315,7 +316,7 @@ void PEFRL(double * Pos, double * Vel, const double * Mass, double *Acc, const d
     }
 }
 
-void Evolution(FILE *File, double *Pos, double *Vel, const double *Mass, double * Acc, const int * len, const int N, const int tag, const int pId, const int nP, const int root, MPI_Status status, const int steps, const double dt, const int jump, function Accel, Integrator evol){
+void Evolution(double *Pos, double *Vel, const double *Mass, double * Acc, const int * len, const int N, const int tag, const int pId, const int nP, const int root, MPI_Status status, const int steps, const double dt, const int jump, function Accel, Integrator evol){
     /*---------------------------------------------------------------------------
     Evolution of the system of bodies under gravitational interactions.
     -----------------------------------------------------------------------------
@@ -342,11 +343,11 @@ void Evolution(FILE *File, double *Pos, double *Vel, const double *Mass, double 
     if (pId==root){
         remove("Evolution.txt");
     }
-    Save_data(File, Pos, Mass, len, N, tag, pId, nP, root, status);
+    Save_data(Pos, Mass, len, N, tag, pId, nP, root, status);
     int ii, jj;
     for (ii = 0; ii < steps; ii++){
         evol(Pos, Vel, Mass, Acc, dt, N, Accel, len, tag, pId, nP, root, status);
-        if ( ii%jump == 0) Save_data(File, Pos, Mass, len, N, tag, pId, nP, root, status);
+        if ( ii%jump == 0) Save_data(Pos, Mass, len, N, tag, pId, nP, root, status);
         for (jj = 0; jj < 3*len[pId]; jj++) Acc[jj] = 0.0;
     }
 }

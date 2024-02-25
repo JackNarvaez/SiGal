@@ -1,0 +1,17 @@
+PRINTMSG=--no-print-directory
+
+.PHONY: setup
+
+setup:
+	@cd setup;${MAKE} $(PRINTMSG) $@;
+
+galaxy:
+	@cd src; ${MAKE} $(PRINTMSG) $@
+
+animation:
+	@cd plot; ${MAKE} $(PRINTMSG) $@
+
+clean:
+	@cd src; ${MAKE} $(PRINTMSG) $@;\
+	cd ../setup; ${MAKE} $(PRINTMSG) $@;\
+	cd ../plot; ${MAKE} $(PRINTMSG) $@;
