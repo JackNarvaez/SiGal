@@ -3,5 +3,5 @@
 0.6     # w : Angle in the xy plane of the galaxy (rads/pi)
 0.001   # dt: Time step
 5000    # r : Radius of Galaxy (AU)
-100000   # steps: Evolution steps
+10000   # steps: Evolution steps
 100     # jump: Data storage interval
