@@ -8,25 +8,7 @@ The N-Body problem using MPI
 #include <string.h>
 #include "NBodies.h"
 
-void read_parameters(double prmts[])
-{
-    FILE *File;
-    File = fopen("./input", "r");
-    char line[256];
-    int row = 0;
-    while (fgets(line, sizeof(line), File)) {
-        if (line[0] == '\n' || line[0] == '#')
-            continue;
-        else {
-            char *token;
-            token = strtok(line, "\t");
-            prmts[row] = atof(token);
-            row += 1;
-        }
-    }
-    fclose(File);
-
-}
+void read_parameters(double prmts[]);
 
 int main(int argc, char** argv) {
     int pId;                        // Process rank
@@ -100,4 +82,24 @@ int main(int argc, char** argv) {
     free (bd.m);
 
     return 0;
+}
+
+void read_parameters(double prmts[])
+{
+    FILE *File;
+    File = fopen("./input", "r");
+    char line[256];
+    int row = 0;
+    while (fgets(line, sizeof(line), File)) {
+        if (line[0] == '\n' || line[0] == '#')
+            continue;
+        else {
+            char *token;
+            token = strtok(line, "\t");
+            prmts[row] = atof(token);
+            row += 1;
+        }
+    }
+    fclose(File);
+
 }
