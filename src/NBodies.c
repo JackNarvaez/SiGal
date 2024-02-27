@@ -4,7 +4,9 @@
 #include <math.h>
 #include <string.h>
 
-const double G = 4*pow(M_PI,2); 
+const double G      = 4*pow(M_PI,2); 
+const double eps    = 0.025;
+const double eps2   = eps*eps;
 
 typedef void (*function)(const double *, const double *, double *, const int *, const int, const int, const int, const int, const int, MPI_Status);
 typedef void (*Integrator)(double *, double *, const double *, double *, double *, double *, const double, const int, function, const int *, const int, const int, const int, const int, MPI_Status);
@@ -61,15 +63,15 @@ void Gravitational_Acc(double * Acc, const double * Pos0, const double * Pos1, c
     ---------------------------------------------------------------------------*/
                      // Gravitational constant [Msun*AU]
     int ii, jj;
-    double drelx, drely, drelz, d2, inv_rtd2, cb_d2;
+    double drelx, drely, drelz, dq2, inv_rtd2, cb_d2;
     for(ii = 0; ii < len0; ii++){
         for(jj = 0; jj < len1; jj++){
             drelx = Pos1[3*jj]-Pos0[3*ii];
             drely = Pos1[3*jj+1]-Pos0[3*ii+1];
             drelz = Pos1[3*jj+2]-Pos0[3*ii+2];
-            d2 = drelx*drelx+drely*drely+drelz*drelz;
-            if(d2<1.0E-10) d2=1.0E-7;                   // Lower distances are not valid
-            inv_rtd2 = 1./sqrt(d2);
+            dq2 = drelx*drelx+drely*drely+drelz*drelz;
+            dq2 += eps2;                   // Smoothing Density
+            inv_rtd2 = 1./sqrt(dq2);
             cb_d2 = inv_rtd2*inv_rtd2*inv_rtd2;
 	        Acc[3*ii]+=G*Mass1[jj]*drelx*cb_d2;
 	        Acc[3*ii+1]+=G*Mass1[jj]*drely*cb_d2;
