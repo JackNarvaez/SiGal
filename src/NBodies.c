@@ -7,7 +7,7 @@
 const double G = 4*pow(M_PI,2); 
 
 typedef void (*function)(const double *, const double *, double *, const int *, const int, const int, const int, const int, const int, MPI_Status);
-typedef void (*Integrator)(double *, double *, const double *, double *, const double, const int, function, const int *, const int, const int, const int, const int, MPI_Status);
+typedef void (*Integrator)(double *, double *, const double *, double *, double *, double *, const double, const int, function, const int *, const int, const int, const int, const int, MPI_Status);
 
 void read_data(const char *File_address, double *Pos, double *Vel, double *Mass) {
     /*---------------------------------------------------------------------------
@@ -193,7 +193,7 @@ void Save_data(const double * Pos, const double * Mass, const int *len, const in
     }
 }
 
-void Euler(double * Pos, double * Vel, const double * Mass, double * Acc, const double dt, const int N, function Accel, const int * len, const int tag, const int pId, const int nP, const int root, MPI_Status status){
+void Euler(double * Pos, double * Vel, const double * Mass, double * Acc, double *X, double *V, const double dt, const int N, function Accel, const int * len, const int tag, const int pId, const int nP, const int root, MPI_Status status){
     /*---------------------------------------------------------------------------
     Euler method to calculate position and velocity at next time step.
     -----------------------------------------------------------------------------
@@ -222,7 +222,7 @@ void Euler(double * Pos, double * Vel, const double * Mass, double * Acc, const 
     }
 }
 
-void PEFRL(double * Pos, double * Vel, const double * Mass, double *Acc, const double dt, const int N, function Accel, const int * len, const int tag, const int pId, const int nP, const int root, MPI_Status status){
+void PEFRL(double * Pos, double * Vel, const double * Mass, double *Acc, double *X, double *V, const double dt, const int N, function Accel, const int * len, const int tag, const int pId, const int nP, const int root, MPI_Status status){
     /*---------------------------------------------------------------------------
     Position Extended Forest-Ruth Like method to calculate position and velocity
     at next time step.
@@ -245,8 +245,6 @@ void PEFRL(double * Pos, double * Vel, const double * Mass, double *Acc, const d
     int local_particles = len[pId];
 
     // Temporal arrays
-    double * X = (double *) malloc(3*local_particles*sizeof(double));
-    double * V = (double *) malloc(3*local_particles*sizeof(double));
 
     X = Pos;
     V = Vel;
@@ -316,7 +314,7 @@ void PEFRL(double * Pos, double * Vel, const double * Mass, double *Acc, const d
     }
 }
 
-void Evolution(double *Pos, double *Vel, const double *Mass, double * Acc, const int * len, const int N, const int tag, const int pId, const int nP, const int root, MPI_Status status, const int steps, const double dt, const int jump, function Accel, Integrator evol){
+void Evolution(double *Pos, double *Vel, const double *Mass, double * Acc, double * postemp, double * veltemp, const int * len, const int N, const int tag, const int pId, const int nP, const int root, MPI_Status status, const int steps, const double dt, const int jump, function Accel, Integrator evol){
     /*---------------------------------------------------------------------------
     Evolution of the system of bodies under gravitational interactions.
     -----------------------------------------------------------------------------
@@ -346,7 +344,7 @@ void Evolution(double *Pos, double *Vel, const double *Mass, double * Acc, const
     Save_data(Pos, Mass, len, N, tag, pId, nP, root, status);
     int ii, jj;
     for (ii = 0; ii < steps; ii++){
-        evol(Pos, Vel, Mass, Acc, dt, N, Accel, len, tag, pId, nP, root, status);
+        evol(Pos, Vel, Mass, Acc, postemp, veltemp, dt, N, Accel, len, tag, pId, nP, root, status);
         if ( ii%jump == 0) Save_data(Pos, Mass, len, N, tag, pId, nP, root, status);
         for (jj = 0; jj < 3*len[pId]; jj++) Acc[jj] = 0.0;
     }
