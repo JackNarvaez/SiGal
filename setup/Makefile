@@ -1,7 +1,7 @@
 CC=mpirun
 PC=python3
 SRC=galaxy.py
-Np=6
+Np=4
 
 setup: $(SRC)
 	@$(CC) -np $(Np) $(PC) $(SRC)
