@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
     }
 
     // Read local particles information
-    char input[16] = "./Data/data";
+    char input[32] = "./Data/data";
     sprintf(input + strlen(input), "%d.txt", pId);
     read_data(input, bd.r, bd.v, bd.m);
 
