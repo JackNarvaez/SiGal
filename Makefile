@@ -3,12 +3,15 @@ PRINTMSG=--no-print-directory
 .PHONY: setup
 
 setup:
-	@cd setup;${MAKE} $(PRINTMSG) $@;
+	@cd setup;${MAKE} $(PRINTMSG) $@;\
 
 galaxy:
 	@cd src; ${MAKE} $(PRINTMSG) $@
 
-animation:
+animation3D:
+	@cd plot; ${MAKE} $(PRINTMSG) $@
+
+animation2D:
 	@cd plot; ${MAKE} $(PRINTMSG) $@
 
 clean:
