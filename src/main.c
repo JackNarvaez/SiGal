@@ -7,8 +7,8 @@ The N-Body problem using MPI
 #include <stdlib.h>
 #include <string.h>
 #include "NBodies.h"
-
-void read_parameters(double prmts[]);
+#include "structures.h"
+#include "data.h"
 
 int main(int argc, char** argv) {
     int pId;                        // Process rank
@@ -17,12 +17,12 @@ int main(int argc, char** argv) {
     int root{0};                    // Root process
     double prmts[7];
 
-    read_parameters(prmts);
+    read_parameters("./input", prmts);
     
     int steps = (int)prmts[5];      // Evolution steps
-    double dt = prmts[3];      // Time step
-    int jump  = (int) prmts[6];      // Data storage interval
-    int N     = (int) prmts[0];      // Total number of bodies
+    double dt = prmts[3];           // Time step
+    int jump  = (int) prmts[6];     // Data storage interval
+    int N     = (int) prmts[0];     // Total number of bodies
     MPI_Status status;
     body bd;                        // Bodies
 
@@ -82,24 +82,4 @@ int main(int argc, char** argv) {
     free (bd.m);
 
     return 0;
-}
-
-void read_parameters(double prmts[])
-{
-    FILE *File;
-    File = fopen("./input", "r");
-    char line[256];
-    int row = 0;
-    while (fgets(line, sizeof(line), File)) {
-        if (line[0] == '\n' || line[0] == '#')
-            continue;
-        else {
-            char *token;
-            token = strtok(line, "\t");
-            prmts[row] = atof(token);
-            row += 1;
-        }
-    }
-    fclose(File);
-
 }

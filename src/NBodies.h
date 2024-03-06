@@ -1,22 +1,8 @@
 #ifndef NBODIES_H_
 #define NBODIES_H_
-#include <mpi.h>
-#include <assert.h>
-#include <stdio.h>
-
-typedef struct {
-    double *m;
-    double *r;
-    double *v;
-    double *a;
-    double *rtemp;
-    double *vtemp;
-} body;
 
 typedef void (* function)(const double *, const double *, double *, const int *, const int, const int, const int, const int, const int, MPI_Status);
 typedef void (* Integrator)(double *, double *, const double *, double *, double *, double *, const double, const int, function, const int *, const int, const int, const int, const int, MPI_Status);
-
-void read_data(const char *, double *, double *, double *);
 
 void Gravitational_Acc(double *, const double *, const double *, const double *, const int *, const int);
 

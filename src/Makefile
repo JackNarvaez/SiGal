@@ -1,8 +1,8 @@
 CC=mpic++
 CFLAGS=-Wall -Werror
 COPTS=-O0
-DEPS=NBodies.h
-SRC=main.c NBodies.c
+DEPS=NBodies.h structures.h data.h
+SRC=main.c NBodies.c data.c
 OBJ=${SRC:.c=.o}
 
 %.o: %.c $(DEPS)
