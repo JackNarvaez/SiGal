@@ -34,7 +34,7 @@ initial_y = y[:N]
 initial_z = z[:N]
 
 def update_scatter(num, scatter, message):
-    message.set_text(f"Time = {num*jump*dt: .2f} years")
+    message.set_text(f"t = {num*jump*dt: .2f} yr")
     scatter._offsets3d = (x[num*N:(num+1)*N], y[num*N:(num+1)*N], z[num*N:(num+1)*N])
     return scatter, message
 
@@ -46,20 +46,21 @@ ax = fig.add_subplot(111, projection='3d')
 message = ax.text2D(0.00, 0.9, "", transform=ax.transAxes)
 
 # Creating a scatter plot for N bodies
-scatter = ax.scatter(initial_x, initial_y, initial_z, c='white', marker='.')
+scatter = ax.scatter(initial_x, initial_y, initial_z, c='white', marker='.', s=1)
 
 # Setting the axes properties
-# if boundaries:
-#     ax.set_xlim3d([-boundaries, boundaries])
-#     ax.set_ylim3d([-boundaries, boundaries])
-#     ax.set_zlim3d([-boundaries, boundaries])
-#     ax.set_xlabel('x [au]')
-#     ax.set_ylabel('y [au]')
-#     ax.set_zlabel('z [au]')
+boundaries = 1.0
+if boundaries:
+    ax.set_xlim3d([-boundaries, boundaries])
+    ax.set_ylim3d([-boundaries, boundaries])
+    ax.set_zlim3d([-boundaries, boundaries])
+    ax.set_xlabel('x [au]')
+    ax.set_ylabel('y [au]')
+    ax.set_zlabel('z [au]')
 
 # Creating the Animation object
 scatter_ani = animation.FuncAnimation(fig, update_scatter, frames=steps, fargs=(scatter, message),
                                       interval=1, blit=True)
 
-scatter_ani.save('../Data/Evolution.gif', writer='pillow', fps=30)
+scatter_ani.save('../Data/Evolution.gif', writer='pillow', fps=10)
 plt.show()
