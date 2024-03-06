@@ -1,8 +1,12 @@
 PC=python3
-SRC=Animation.py
+SRC3D=Animation3D.py
+SRC2D=animation2D.py
 
-animation: $(SRC)
-	@$(PC) $(SRC)
+animation2D: $(SRC2D)
+	@$(PC) $(SRC2D)
+
+animation3D: $(SRC3D)
+	@$(PC) $(SRC3D)
 
 clean:
 	@rm -f ../Data/*.gif
