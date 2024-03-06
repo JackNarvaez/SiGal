@@ -107,8 +107,7 @@ int main() {
             insertParticle(rootNode, &particles[ii]); 
         }
 
-        // Opcional: Calcular y actualizar el centro de masa de cada nodo después de las actualizaciones
-        //CenterOfMass(rootNode);
+        CenterOfMass(rootNode);
 
 
     }
@@ -453,21 +452,19 @@ void freeNode(Node* node) {
 
 
 void writePositionsToCSV(Particle* particles, int numParticles, const char* filename) {
-    FILE* file = fopen(filename, "w"); // Abre el archivo para escribir
+    FILE* file = fopen(filename, "w"); 
     if (file == NULL) {
         printf("Error al abrir el archivo.\n");
         return;
     }
 
-    // Escribe los encabezados de las columnas
     fprintf(file, "X,Y,Z\n");
 
-    // Itera sobre cada partícula y escribe sus posiciones en el archivo
     for (int i = 0; i < numParticles; i++) {
         fprintf(file, "%f,%f,%f\n", particles[i].position.x, particles[i].position.y, particles[i].position.z);
     }
 
-    fclose(file); // Cierra el archivo
+    fclose(file);
 }
 
 
