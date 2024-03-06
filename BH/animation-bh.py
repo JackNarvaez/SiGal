@@ -7,7 +7,7 @@ import pandas as pd
 num_steps = 1200  
 
 def load_particle_positions(step):
-    filename = f'particulas_posiciones_{step}.csv'
+    filename = f'positions_{step}.csv'
     data = pd.read_csv(filename)
     x_positions = data['X'].values
     y_positions = data['Y'].values

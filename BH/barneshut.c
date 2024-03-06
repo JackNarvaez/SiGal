@@ -13,7 +13,7 @@ const double theta = 0.5;
 const double G = 4 * (3.14159216)*(3.14159216); 
 const double dt = 0.01; 
 const int nSteps = 12000;
-const double epsilon = 1e-7; // Un pequeño valor cercano a cero
+const double epsilon = 1e-7;
 
 
 typedef struct Vec3 {
@@ -61,11 +61,6 @@ int main() {
     Init_Particles(particles, N, rootMin, rootMax);
     Node* rootNode = Init_Node(rootMin, rootMax);
 
-    printf("Número de partículas: %d\n", N);
-    printf("Theta: %f\n", theta);
-    printf("Límites del espacio: min (%f, %f, %f), max (%f, %f, %f)\n", rootMin.x, rootMin.y, rootMin.z, rootMax.x, rootMax.y, rootMax.z);  
-
-
     // Initial insertion of particles into the tree
     for (size_t ii = 0; ii < N; ii++) {
         insertParticle(rootNode, &particles[ii]);
@@ -75,7 +70,7 @@ int main() {
 
     for (int step = 0; step < nSteps; step++) {
         // Write positions
-        sprintf(filename, "particulas_posiciones_%d.csv", step);
+        sprintf(filename, "positions_%d.csv", step);
         writePositionsToCSV(particles, N, filename);
 
         // clean forces
@@ -83,15 +78,10 @@ int main() {
 
         // calculate force of each particle
         for (size_t ii = 0; ii < N; ii++) {
+
             Vec3 f = {0, 0, 0}; 
             Force(rootNode, &particles[ii], &f);
             force[ii] = f; 
-           /*  if (ii % 1 == 0)
-            {
-                printf("Fuerza sobre partícula %zu: X=%f, Y=%f, Z=%f\n", ii, f.x, f.y, f.z);
-
-            } */
-            
         }
 
         // Update vel and acc
@@ -155,7 +145,7 @@ Node* createChildNodeForOctant(Node* parent, int octantIndex) {
     Vec3 min = parent->bbox[0];
     Vec3 max = parent->bbox[1];
 
-    // Limits of octant 
+    // octant limits
     switch (octantIndex) {
         case 0: // Octant -x, -y, -z
             max.x = center.x;
@@ -270,10 +260,10 @@ int OctantIndex(Node* node, Particle* particle) {
 
 void updateMassCenterOfMass(Node* node, Particle* particle){
     if (node->totalMass == 0){
-
+        //Empty node
         node->centerOfMass = particle->position;
     }
-    else {
+    else { //Average CM
         node->centerOfMass.x = (node->centerOfMass.x * node->totalMass + particle->position.x * particle->mass) / (node->totalMass + particle->mass);
         node->centerOfMass.y = (node->centerOfMass.y * node->totalMass + particle->position.y * particle->mass) / (node->totalMass + particle->mass);
         node->centerOfMass.z = (node->centerOfMass.z * node->totalMass + particle->position.z * particle->mass) / (node->totalMass + particle->mass);
