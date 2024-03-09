@@ -7,7 +7,7 @@
 //#include <mpi.h>
 
 
-const int N = 4;
+const int N = 100;
 const double theta = 0.5;
 //const double M_PI = 3.14159216;
 int totalBodiesInserted = 0;
