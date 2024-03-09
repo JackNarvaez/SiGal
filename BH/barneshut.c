@@ -300,12 +300,12 @@ void insertParticle(Node* node, Particle* particle) {
 
 void subdivideNode(Node* node) 
 {
-    Vec3 center = {
+    /* Vec3 center = {
         (node->bbox[0].x + node->bbox[1].x) / 2,
         (node->bbox[0].y + node->bbox[1].y) / 2,
         (node->bbox[0].z + node->bbox[1].z) / 2
     };
-
+ */
     // Create child nodes
     for (int ii = 0; ii < 8; ii++) {
         if (node->children[ii] == NULL) {
