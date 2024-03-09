@@ -5,7 +5,7 @@
 #include <math.h>
 #include <time.h>
 
-const int N = 100;
+const int N = 10;
 const double theta = 0.5;
 //const double M_PI = 3.14159216;
 
