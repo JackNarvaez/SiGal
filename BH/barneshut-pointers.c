@@ -7,14 +7,13 @@
 //#include <mpi.h>
 
 
-const int N = 100;
+const int N = 1000;
 const double theta = 0.5;
 //const double M_PI = 3.14159216;
-int totalBodiesInserted = 0;
 
-const double G = 4 * 3.14159216 * 3.14159216; 
-const double dt = 0.001; 
-const int nSteps = 100;
+const double G = -4 * 3.14159216 * 3.14159216; 
+const double dt = 0.05; 
+const int nSteps = 1200;
 const double epsilon = 1e-7;
 
 
@@ -53,6 +52,7 @@ void freeBody(body* bd, int N);
 
 double randomDouble(double min, double max);
 void writePositionsToCSV(body* bd, int numbd, const char* filename);
+void writeNodeToFile(Node *node, FILE *file);
 void Init_bd2(body* bd, int N, double* center);
 
 
@@ -63,11 +63,14 @@ int main() {
     srand(time(NULL));
 
     double *force = (double *)malloc(3 * N * sizeof(double));
-    double rootMin[3] = {-70, -70, -70};
-    double rootMax[3] = { 70,  70, 70};
-    double centerg[3] = {0,0,0};
+    double *f     = (double *)malloc(3 * sizeof(double));
+
+    double rootMin[3] = {-70.0, -70.0, -70.0};
+    double rootMax[3] = { 70.0,  70.0, 70.0};
+    //double centerg[3] = {0,0,0};
 
     // Init quantities
+
     //Init_bodys2(bd, N, centerg);
     Init_bd(bd, N, rootMin, rootMax);
     Node* rootNode = Init_Node(rootMin, rootMax);
@@ -79,33 +82,35 @@ int main() {
 
     char filename[nSteps];
 
-    for (int step = 0; step < nSteps; step++) {
+    for (int ii = 0; ii < nSteps; ii++) {
         // Write positions
-        if (step % 1 == 0)
+        if (ii % 1 == 0)
         {
-            sprintf(filename, "positions_%d.csv", step);
+            sprintf(filename, "positions_%d.csv", ii);
             writePositionsToCSV(bd, N, filename);
         }
 
         // clean forces
-        memset(force, 0, sizeof(force));
+        memset(force, 0.0, sizeof(force));
 
         // calculate force of each body
         for (int ii = 0; ii < N; ii++) {
 
-            double f[3] = {0.0, 0.0, 0.0}; 
+            f[0] = 0.0; f[1] = 0.0; f[2] = 0.0; 
+
             Force(rootNode, &bd[ii], f);
-            force[3*ii] = f[0];
+
+            force[3*ii]     = f[0];
             force[3*ii + 1] = f[1];
             force[3*ii + 2] = f[2];
         }
 
         // Update vel and acc for each particle
         for (int ii = 0; ii < N; ii++) {
-            Euler(&bd[ii], &force[3*ii], dt);  // Pasamos la dirección del segmento de fuerza correspondiente a la partícula ii
+            Euler(&bd[ii], &force[3*ii], dt);  
         }
 
-
+           
         // Clean last node
         freeNode(rootNode);
         rootNode = Init_Node(rootMin, rootMax);
@@ -114,12 +119,18 @@ int main() {
             Insertbd(rootNode, &bd[ii]); 
         }
 
-        //CenterOfMass(rootNode);
+        CenterOfMass(rootNode);
 
     }
 
+   
+    FILE *file = fopen("octants.txt", "w"); // Abre el archivo para escritura
+    writeNodeToFile(rootNode, file);
+    fclose(file);
+
     freeBody(bd, N);
     free(force);
+    free(f);
     freeNode(rootNode);
 
     return 0;
@@ -272,7 +283,7 @@ void Insertbd(Node* node, body* bd) {
 
 
 void updateMassCenterOfMass(Node* node, body* bd){
-    if (node->totalMass == 0){
+    if (*node->totalMass == 0){
         //Empty node
         node->centerOfMass[0] = bd->r[0]; 
         node->centerOfMass[1] = bd->r[1]; 
@@ -374,7 +385,7 @@ void CenterOfMass(Node* node) {
     double totalMass = 0.0;
     double weightedP[3] = {0.0, 0.0, 0.0};
 
-    //// If the node has a body directly, add its mass and its contribution to the center of mass
+// If the node has a body directly, add its mass and its contribution to the center of mass
     if (node->bd != NULL) {
         totalMass += *node->bd->m;
         weightedP[0] += node->bd->r[0] * *node->bd->m;
@@ -412,7 +423,7 @@ void Force(Node* node, body* bd, double* f ){
     double r_ij = distance(bd->r, node->centerOfMass);
 
     // Avoid divergence
-    if (r_ij == epsilon) return;
+    if (r_ij <= epsilon) return;
 
     // size of node
     double nodeSize = node->bbox[1][0] - node->bbox[0][0];
@@ -450,14 +461,14 @@ void Euler(body* bd, double* force, double dt) {
     bd->a[2] = force[2] / *bd->m;
 
     // Update Velocity
-    bd->v[0] += 0.5 * bd->a[0] * dt;
-    bd->v[1] += 0.5 * bd->a[1] * dt;
-    bd->v[2] += 0.5 * bd->a[2] * dt;
+    bd->v[0] +=  bd->a[0] * dt;
+    bd->v[1] +=  bd->a[1] * dt;
+    bd->v[2] +=  bd->a[2] * dt;
 
     // Update Positions
-    bd->r[0] += 0.5 * bd->v[0] * dt;
-    bd->r[1] += 0.5 * bd->v[1] * dt;
-    bd->r[2] += 0.5 * bd->v[2] * dt;
+    bd->r[0] +=  bd->v[0] * dt;
+    bd->r[1] +=  bd->v[1] * dt;
+    bd->r[2] +=  bd->v[2] * dt;
 }
 
 
@@ -514,6 +525,21 @@ void writePositionsToCSV(body* bd, int numbd, const char* filename) {
 
     fclose(file);
 }
+
+void writeNodeToFile(Node *node, FILE *file) {
+    if (node == NULL) return;
+    
+    // write limits of nodes
+    fprintf(file, "%f,%f,%f,%f,%f,%f\n",
+            node->bbox[0][0], node->bbox[0][1], node->bbox[0][2],
+            node->bbox[1][0], node->bbox[1][1], node->bbox[1][2]);
+    
+    // Recursivity for childs
+    for (int ii = 0; ii < 8; ii++) {
+        writeNodeToFile(node->children[ii], file);
+    }
+}
+
 
 double randomDouble(double min, double max) {
     return min + (rand() / (RAND_MAX / (max - min)));
