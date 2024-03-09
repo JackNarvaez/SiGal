@@ -4,7 +4,7 @@ import matplotlib.animation as animation
 from mpl_toolkits.mplot3d import Axes3D  
 import pandas as pd
 
-num_steps = 1200  
+num_steps = 1200
 
 def load_particle_positions(step):
     filename = f'positions_{step}.csv'
