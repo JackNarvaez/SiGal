@@ -53,9 +53,9 @@ ax_xy, ax_xz, ax_yz = axs_2d
 with open("octants.txt", "r") as file:
     for line in file:
         corners = tuple(map(float, line.strip().split(',')))
-        draw_rectangle(ax_xy, corners, line_width=1)  # Proyección XY necesita min_x, min_y, max_x, max_y
-        draw_rectangle(ax_xz, (corners[0], corners[2], 0, corners[3], corners[5], 0), line_width=2)  # Proyección XZ
-        draw_rectangle(ax_yz, (corners[1], corners[2], 0, corners[4], corners[5], 0), line_width=2)  # Proyección YZ
+        draw_rectangle(ax_xy, corners, line_width=1)  
+        draw_rectangle(ax_xz, (corners[0], corners[2], 0, corners[3], corners[5], 0), line_width=1)  
+        draw_rectangle(ax_yz, (corners[1], corners[2], 0, corners[4], corners[5], 0), line_width=1)  
 
 ax_xy.scatter(bodies_df['X'], bodies_df['Y'], color='r', s=5)
 ax_xz.scatter(bodies_df['X'], bodies_df['Z'], color='r', s=10)
