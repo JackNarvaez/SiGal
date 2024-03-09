@@ -7,7 +7,7 @@
 //#include <mpi.h>
 
 
-const int N = 1000;
+const int N = 100;
 const double theta = 0.5;
 
 const double G = 4 * (3.14159216)*(3.14159216); 
