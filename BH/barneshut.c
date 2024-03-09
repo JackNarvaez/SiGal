@@ -12,7 +12,7 @@ const double theta = 0.5;
 
 const double G = 4 * (3.14159216)*(3.14159216); 
 const double dt = 0.01; 
-const int nSteps = 12000;
+const int nSteps = 1200;
 const double epsilon = 1e-7;
 
 
