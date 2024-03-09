@@ -301,7 +301,7 @@ void subdivideNode(Node* node) {
 
 
 int OctantIndex(Node* node, body* bd) {
-    // Calcula el centro del nodo
+    // Calculate Node Center
     double center[3];
 
     center[0] = (node->bbox[0][0] + node->bbox[1][0]) / 2.0;
@@ -372,35 +372,35 @@ double distance(double* ri, double* rj)
 
 void CenterOfMass(Node* node) {
     double totalMass = 0.0;
-    double weightedPositionSum[3] = {0.0, 0.0, 0.0};
+    double weightedP[3] = {0.0, 0.0, 0.0};
 
-    // Si el nodo tiene un cuerpo directamente, sumar su masa y su contribución al centro de masa
+    //// If the node has a body directly, add its mass and its contribution to the center of mass
     if (node->bd != NULL) {
         totalMass += *node->bd->m;
-        weightedPositionSum[0] += node->bd->r[0] * *node->bd->m;
-        weightedPositionSum[1] += node->bd->r[1] * *node->bd->m;
-        weightedPositionSum[2] += node->bd->r[2] * *node->bd->m;
+        weightedP[0] += node->bd->r[0] * *node->bd->m;
+        weightedP[1] += node->bd->r[1] * *node->bd->m;
+        weightedP[2] += node->bd->r[2] * *node->bd->m;
     }
 
-    // Recorrer los nodos hijos para acumular su masa y contribución al centro de masa
+// Loop through the child nodes to accumulate their mass and contribution to the center of mass
     for (int i = 0; i < 8; ++i) {
         if (node->children[i] != NULL) {
             CenterOfMass(node->children[i]); // Llamada recursiva
             totalMass += *node->children[i]->totalMass;
-            weightedPositionSum[0] += node->children[i]->centerOfMass[0] * *node->children[i]->totalMass;
-            weightedPositionSum[1] += node->children[i]->centerOfMass[1] * *node->children[i]->totalMass;
-            weightedPositionSum[2] += node->children[i]->centerOfMass[2] * *node->children[i]->totalMass;
+            weightedP[0] += node->children[i]->centerOfMass[0] * *node->children[i]->totalMass;
+            weightedP[1] += node->children[i]->centerOfMass[1] * *node->children[i]->totalMass;
+            weightedP[2] += node->children[i]->centerOfMass[2] * *node->children[i]->totalMass;
         }
     }
 
-    // Si hay masa total, calcular el centro de masa del nodo
+    //If there is total mass, calculate the center of mass of the node
     if (totalMass > 0) {
-        node->centerOfMass[0] = weightedPositionSum[0] / totalMass;
-        node->centerOfMass[1] = weightedPositionSum[1] / totalMass;
-        node->centerOfMass[2] = weightedPositionSum[2] / totalMass;
+        node->centerOfMass[0] = weightedP[0] / totalMass;
+        node->centerOfMass[1] = weightedP[1] / totalMass;
+        node->centerOfMass[2] = weightedP[2] / totalMass;
     }
 
-    *node->totalMass = totalMass; // Actualizar la masa total del nodo
+    *node->totalMass = totalMass; 
 }
 
 
