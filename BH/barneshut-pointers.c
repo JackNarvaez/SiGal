@@ -7,7 +7,7 @@
 //#include <mpi.h>
 
 
-const int N = 100;
+const int N = 1000;
 const double theta = 0.5;
 //const double M_PI = 3.14159216;
 
