@@ -7,11 +7,11 @@
 //#include <mpi.h>
 
 
-const int N = 100;
-const double theta = 0.5;
+const int N = 1000;
+const double theta = 0.2;
 
 const double G = 4 * (3.14159216)*(3.14159216); 
-const double dt = 0.01; 
+const double dt = 0.001; 
 const int nSteps = 1200;
 const double epsilon = 1e-7;
 
@@ -48,7 +48,7 @@ void Euler(Particle* particle, Vec3 force, double dt);
 void freeNode(Node* node);
 double randomDouble(double min, double max);
 void writePositionsToCSV(Particle* particles, int numParticles, const char* filename);
-
+void Init_Particles2(Particle* particles, int N);
 
 int main() {
 
@@ -58,7 +58,8 @@ int main() {
     Vec3 rootMax = {70, 70, 70};
 
     // Init quantities
-    Init_Particles(particles, N, rootMin, rootMax);
+    Init_Particles2(particles, N);
+    //Init_Particles(particles, N, rootMin, rootMax);
     Node* rootNode = Init_Node(rootMin, rootMax);
 
     // Initial insertion of particles into the tree
@@ -208,12 +209,47 @@ void Init_Particles(Particle* particles, int N, Vec3 min, Vec3 max) {
         particles[ii].position.y = randomDouble(min.y+20, max.y-20);
         particles[ii].position.z = randomDouble(min.z+20, max.z-20);
 
-        particles[ii].velocity.x = 0.01; 
-        particles[ii].velocity.y = 0.01; 
-        particles[ii].velocity.z = 0.01; 
+        particles[ii].velocity.x = 0; 
+        particles[ii].velocity.y = 0; 
+        particles[ii].velocity.z = 0; 
 
         // mass
         particles[ii].mass = 1.0; 
+    }
+}
+
+
+
+void Init_Particles2(Particle* particles, int N) {
+    srand(time(NULL));
+
+    Vec3 center = {0,0,0};
+    double disk_thickness = 1.0;
+    double galaxy_radius = 50.0;
+    double galaxy_mass = N;
+
+    for (size_t ii = 0; ii < N; ii++) {
+        // Distribución radial desde el centro de la galaxia
+        double radius = ((double)rand() / RAND_MAX) * galaxy_radius;
+        double theta = ((double)rand() / RAND_MAX) * 2 * 3.14159216; // Ángulo aleatorio en radianes
+
+        // Altura aleatoria para simular el espesor del disco de la galaxia
+        double height = ((double)rand() / RAND_MAX) * disk_thickness - disk_thickness / 2;
+
+        // Conversión de coordenadas polares a cartesianas
+        particles[ii].position.x = center.x + radius * cos(theta);
+        particles[ii].position.y = center.y + radius * sin(theta);
+        particles[ii].position.z = center.z + height;
+
+        // Velocidad inicial: orbital simple para simular rotación galáctica
+        // La velocidad es perpendicular al radio para crear movimiento circular
+        double orbital_velocity = sqrt((G * galaxy_mass) / radius); // Fórmula simplificada
+        particles[ii].velocity.x = -orbital_velocity * sin(theta);
+        particles[ii].velocity.y = orbital_velocity * cos(theta);
+        particles[ii].velocity.z = 0; // Sin movimiento inicial en la dirección Z
+
+        // Masa
+        particles[ii].mass = 1.0; // Considera ajustar según la distribución de masa deseada
     }
 }
 
@@ -300,12 +336,12 @@ void insertParticle(Node* node, Particle* particle) {
 
 void subdivideNode(Node* node) 
 {
-    /* Vec3 center = {
+    Vec3 center = {
         (node->bbox[0].x + node->bbox[1].x) / 2,
         (node->bbox[0].y + node->bbox[1].y) / 2,
         (node->bbox[0].z + node->bbox[1].z) / 2
     };
- */
+
     // Create child nodes
     for (int ii = 0; ii < 8; ii++) {
         if (node->children[ii] == NULL) {
@@ -322,47 +358,42 @@ double distance(Vec3 ri, Vec3 rj)
 }
 
 
-void CenterOfMass(Node* node)
-{
-    node->centerOfMass = (Vec3){0,0,0};
-    node->totalMass = 0;
+void CenterOfMass(Node* node) {
 
-    int count = 0;
+    double totalMass = 0.0;
+    Vec3 weightedP = (Vec3){0.0, 0.0, 0.0};
 
-    //Count particles
-    if (node->particle !=NULL){
-        node->centerOfMass.x = node->particle->position.x * node->particle->mass;
-        node->centerOfMass.y = node->particle->position.y * node->particle->mass;
-        node->centerOfMass.z = node->particle->position.z * node->particle->mass;
+// If the node has a body directly, add its mass and its contribution to the center of mass
+    if (node->particle != NULL) {
+        totalMass += node->particle->mass;
+        weightedP.x += node->particle->position.x * node->particle->mass;
+        weightedP.y += node->particle->position.y * node->particle->mass;
+        weightedP.z += node->particle->position.z * node->particle->mass;
     }
 
-    // Run over child nodes
-    for (size_t ii = 0; ii < count; ii++){
-        if (node->children[ii] != NULL){
+// Loop through the child nodes to accumulate their mass and contribution to the center of mass
+    for (int i = 0; i < 8; ++i) {
+        if (node->children[i] != NULL) {
 
-            // Recursive call
-            CenterOfMass(node->children[ii]);
+            CenterOfMass(node->children[i]); // Llamada recursiva
 
-            // Sum of Mass
-            node->totalMass += node->children[ii]->totalMass;
-
-            if (node->children[ii]->totalMass > 0){
-                node->centerOfMass.x += node->children[ii]->centerOfMass.x * node->children[ii]->totalMass;
-                node->centerOfMass.y += node->children[ii]->centerOfMass.y * node->children[ii]->totalMass;
-                node->centerOfMass.z += node->children[ii]->centerOfMass.z * node->children[ii]->totalMass;
-                count++;
-            } 
+            totalMass += node->children[i]->totalMass;
+            weightedP.x += node->children[i]->centerOfMass.x * node->children[i]->totalMass;
+            weightedP.y += node->children[i]->centerOfMass.y * node->children[i]->totalMass;
+            weightedP.z += node->children[i]->centerOfMass.z * node->children[i]->totalMass;
         }
     }
 
-    // if there are mass, adjust the CM
-    if (node->totalMass > 0 && count > 0 ){
-        node->centerOfMass.x /=node->totalMass;
-        node->centerOfMass.y /=node->totalMass;
-        node->centerOfMass.z /=node->totalMass;
+    //If there is total mass, calculate the center of mass of the node
+    if (totalMass > 0) {
+        node->centerOfMass.x = weightedP.x / totalMass;
+        node->centerOfMass.y = weightedP.y / totalMass;
+        node->centerOfMass.z = weightedP.z / totalMass;
     }
-     
+
+    node->totalMass = totalMass; 
 }
+
 
 
 void Force(Node* node, Particle* particle, Vec3* f ){
