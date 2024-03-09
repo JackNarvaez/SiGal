@@ -67,8 +67,6 @@ int main() {
      // Initial insertion of bodys into the tree
     for (int ii = 0; ii < N; ++ii) {
         Insertbd(rootNode, &bd[ii]);
-
-
     }
 
     char filename[nSteps];
@@ -102,7 +100,7 @@ Node* Init_Node(double *min, double *max){
     node->bbox[0] = (double *)malloc(3 * sizeof(double));       // min[x,y,z]
     node->bbox[1] = (double *)malloc(3 * sizeof(double));       // max[x,y,z]
 
-if (node->centerOfMass == NULL || node->totalMass == NULL || node->bbox[0] == NULL || node->bbox[1] == NULL) {
+    if (node->centerOfMass == NULL || node->totalMass == NULL || node->bbox[0] == NULL || node->bbox[1] == NULL) {
         fprintf(stderr, "Error Allocation Memory in Init_Node\n");
         exit(EXIT_FAILURE);
     }
@@ -139,7 +137,7 @@ void Init_bd(body *bd, int N, double *min, double *max) {
             exit(EXIT_FAILURE);
         }
 
-        // random pos in domain para este cuerpo específico
+        // random pos in domain 
         bd[ii].r[0] = randomDouble(min[0] + 20, max[0] - 20);  // x component
         bd[ii].r[1] = randomDouble(min[1] + 20, max[1] - 20);  // y component
         bd[ii].r[2] = randomDouble(min[2] + 20, max[2] - 20);  // z component
@@ -207,35 +205,26 @@ void Init_bd2(body* bd, int N, double *center) {
 
 
 void Insertbd(Node* node, body* bd) {
-    printf("Insertbd llamado. Nodo: %p, Cuerpo: %p\n", (void*)node, (void*)bd);
 
     // Empty Node
     if (node->bd == NULL && *node->totalMass == 0) {
-        printf("Nodo vacío. Insertando cuerpo.\n");
         node->bd = bd;
         updateMassCenterOfMass(node, bd);
         return;
     }
 
-
     //If the node is a leaf but already contains a body, subdivide the node.
     if (node->bd != NULL && node->totalMass != 0) {
-        printf("Nodo hoja con cuerpo. Subdividiendo...\n");
         subdivideNode(node);  
     }
 
     // Insert Child
     int newbodyIndex = OctantIndex(node, bd);
-    printf("Índice de octante para nuevo cuerpo: %d\n", newbodyIndex);
     if (node->children[newbodyIndex] == NULL) {
-        printf("Creando nodo hijo para octante %d.\n", newbodyIndex);
         node->children[newbodyIndex] = createChildNodeForOctant(node, newbodyIndex);
 
     }
 
-
-    printf("Insertando cuerpo en nodo hijo.\n");
-    //totalBodiesInserted++;
 
     Insertbd(node->children[newbodyIndex], bd);
 
@@ -244,8 +233,8 @@ void Insertbd(Node* node, body* bd) {
     
 }
 
+
 void updateMassCenterOfMass(Node* node, body* bd){
-    printf("Actualizando centro de masa. Nodo: %p, Cuerpo: %p\n", (void*)node, (void*)bd);
     if (node->totalMass == 0){
         //Empty node
         node->centerOfMass[0] = bd->r[0]; 
@@ -260,20 +249,21 @@ void updateMassCenterOfMass(Node* node, body* bd){
     *node->totalMass += *bd->m;
 }
 
+
 void subdivideNode(Node* node) {
-    printf("Subdividiendo nodo: %p\n", (void*)node);
     // Create child nodes
     for (int ii = 0; ii < 8; ii++) {
         // Node not Full
         if (node->children[ii] == NULL) {
-            printf("Creando nodo hijo %d para subdivisión.\n", ii);
+
             node->children[ii] = createChildNodeForOctant(node, ii);
         }
     }
 }
 
+
 int OctantIndex(Node* node, body* bd) {
-    // Calcula el centro del nodo
+    // Calculate center of node
     double center[3];
 
     center[0] = (node->bbox[0][0] + node->bbox[1][0]) / 2.0;
@@ -317,17 +307,15 @@ int OctantIndex(Node* node, body* bd) {
     printf("Índice de octante calculado: %d\n", index);
     return index;
 }
-/* 
+ 
+
 Node* createChildNodeForOctant(Node* node, int octantIndex) {
-    printf("Creando nodo hijo para octante %d\n", octantIndex);
 
     // Center of Node
     double center[3]; 
     center[0] = (node->bbox[0][0] + node->bbox[1][0]) / 2.0;
     center[1] = (node->bbox[0][1] + node->bbox[1][1]) / 2.0;
     center[2] = (node->bbox[0][2] + node->bbox[1][2]) / 2.0;
-
-    printf("Centro del nodo padre: (%f, %f, %f)\n", center[0], center[1], center[2]);
 
     // Limits of Node
     double min[3] = {node->bbox[0][0], node->bbox[0][1], node->bbox[0][2]};
@@ -352,27 +340,6 @@ Node* createChildNodeForOctant(Node* node, int octantIndex) {
         max[2] = center[2];
     }
 
-    printf("Límites del nuevo nodo hijo: min(%f, %f, %f), max(%f, %f, %f)\n", min[0], min[1], min[2], max[0], max[1], max[2]);
-
-    Node* childNode = Init_Node(min, max);
-    printf("Nodo hijo creado: %p\n", (void*)childNode);
-    return childNode;
-}
-
-
- */
-
-Node* createChildNodeForOctant(Node* node, int octantIndex) {
-    double center[3];
-    center[0] = (node->bbox[0][0] + node->bbox[1][0]) / 2.0;
-    center[1] = (node->bbox[0][1] + node->bbox[1][1]) / 2.0;
-    center[2] = (node->bbox[0][2] + node->bbox[1][2]) / 2.0;
-
-    double min[3], max[3];
-    for (int i = 0; i < 3; i++) {
-        min[i] = (octantIndex & (1 << (2-i))) ? center[i] : node->bbox[0][i];
-        max[i] = (octantIndex & (1 << (2-i))) ? node->bbox[1][i] : center[i];
-    }
 
     return Init_Node(min, max);
 }
@@ -400,7 +367,7 @@ void freeBody(body* bd, int N) {
 void freeNode(Node* node) {
     if (node == NULL) return;
     
-    // Liberar memoria de punteros dentro del nodo
+    // Free Memory
     if (node->centerOfMass != NULL) free(node->centerOfMass);
     if (node->totalMass != NULL) free(node->totalMass);
     if (node->bbox[0] != NULL) free(node->bbox[0]);
@@ -424,21 +391,22 @@ double randomDouble(double min, double max) {
 void writeNodeToFile(Node *node, FILE *file) {
     if (node == NULL) return;
     
-    // Escribe los límites del nodo al archivo
+    // write limits of nodes
     fprintf(file, "%f,%f,%f,%f,%f,%f\n",
             node->bbox[0][0], node->bbox[0][1], node->bbox[0][2],
             node->bbox[1][0], node->bbox[1][1], node->bbox[1][2]);
     
-    // Recursividad para los hijos
+    // Recursivity for childs
     for (int i = 0; i < 8; i++) {
         writeNodeToFile(node->children[i], file);
     }
 }
 
+
 void writePositionsToCSV(body* bd, int numbd, const char* filename) {
     FILE* file = fopen(filename, "w"); 
     if (file == NULL) {
-        printf("Error al abrir el archivo.\n");
+        printf("Error to open file.\n");
         return;
     }
 
