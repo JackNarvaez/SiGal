@@ -5,7 +5,7 @@
 #include <math.h>
 #include <time.h>
 
-const int N = 10;
+const int N = 100;
 const double theta = 0.5;
 //const double M_PI = 3.14159216;
 
@@ -37,7 +37,6 @@ Node* createChildNodeForOctant(Node* node, int octantIndex);
 
 int OctantIndex(Node* node, body* bd);
 void Init_bd(body* bd, int N, double* min, double* max);
-void Init_bd2(body* bd, int N, double* center);
 
 void updateMassCenterOfMass(Node* nd, body* bd);
 void subdivideNode(Node* nd);
@@ -156,54 +155,6 @@ void Init_bd(body *bd, int N, double *min, double *max) {
 }
 
 
-void Init_bd2(body* bd, int N, double *center) {
-
-    double galaxy_radius = 50.0;
-    double disk_thickness = 1.5;
-    double galaxy_mass = N; 
-
-    for (int ii = 0; ii < N; ++ii) {
-        bd[ii].r = (double *)malloc(3 * sizeof(double));
-        bd[ii].v = (double *)malloc(3 * sizeof(double));
-        bd[ii].a = (double *)malloc(3 * sizeof(double));
-        bd[ii].m = (double *)malloc(sizeof(double));
-
-        if (bd[ii].r == NULL || bd[ii].v == NULL || bd[ii].a == NULL || bd[ii].m == NULL) {
-            fprintf(stderr, "Error Allocation Memory Init_bd2\n");
-            exit(EXIT_FAILURE);
-        }
-    }
-
-    for (int ii = 0; ii < N; ii++) {
-        // Radial distribution
-
-        double radius = ((double)rand() / RAND_MAX) * galaxy_radius;
-        double theta = ((double)rand() / RAND_MAX) * 2 * 3.141592; // Ángulo aleatorio en radianes
-
-        // Height to disk
-        double height = ((double)rand() / RAND_MAX) * disk_thickness - disk_thickness / 2;
-
-        // coordinates
-        bd[ii].r[0] = center[0] + radius * cos(theta); // x
-        bd[ii].r[1] = center[1] + radius * sin(theta); // y
-        bd[ii].r[2] = center[2] + height;              // z
-
-        // initial velocity: orbital velocity in x-y plane
-        double orbital_velocity = sqrt((G * galaxy_mass) / radius); // Fórmula simplificada
-        bd[ii].v[0] = -orbital_velocity * sin(theta); // vx
-        bd[ii].v[1] = orbital_velocity * cos(theta);  // vy
-        bd[ii].v[2] = 0.0;                            // vz
-
-        bd[ii].a[0] = 0.0; 
-        bd[ii].a[1] = 0.0; 
-        bd[ii].a[2] = 0.0; 
-
-        // Mass
-        *bd[ii].m = 1.0; // Asumiendo que cada cuerpo tiene una masa unitaria
-    }
-}
-
-
 void Insertbd(Node* node, body* bd) {
 
     // Empty Node
@@ -235,13 +186,15 @@ void Insertbd(Node* node, body* bd) {
 
 
 void updateMassCenterOfMass(Node* node, body* bd){
-    if (node->totalMass == 0){
+    if (*node->totalMass == 0){
         //Empty node
         node->centerOfMass[0] = bd->r[0]; 
         node->centerOfMass[1] = bd->r[1]; 
         node->centerOfMass[2] = bd->r[2]; 
     }
-    else { //Average CM
+    else { //Average CM  
+           //(cm * M * + r * m) / (M +m)
+
         node->centerOfMass[0] = (node->centerOfMass[0] * *node->totalMass + bd->r[0] * *bd->m) / (*node->totalMass + *bd->m);
         node->centerOfMass[1] = (node->centerOfMass[1] * *node->totalMass + bd->r[1] * *bd->m) / (*node->totalMass + *bd->m);
         node->centerOfMass[2] = (node->centerOfMass[2] * *node->totalMass + bd->r[2] * *bd->m) / (*node->totalMass + *bd->m);
