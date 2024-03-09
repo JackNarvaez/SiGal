@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
+
 def draw_cube(ax, corners, line_width=0.5):
     min_x, min_y, min_z, max_x, max_y, max_z = corners
     for s, e in [((min_x, min_y, min_z), (max_x, min_y, min_z)),
