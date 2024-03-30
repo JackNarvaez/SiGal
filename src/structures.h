@@ -10,4 +10,12 @@ typedef struct {
     double *vtemp;
 } body;
 
+typedef struct Node{
+    double  *CoM;
+    double  *totalMass;
+    double  *bbox[2];
+    int     *bds;
+    Node    *children[8];
+} Node;
+
 #endif // STRUCTURES_H_
