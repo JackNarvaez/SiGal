@@ -25,7 +25,7 @@ def draw_rectangle(ax, corners, line_width=0.5):
     ax.plot(*zip(*xy), color="k", lw=line_width)
 
 
-bodies_df = pd.read_csv("positions_1.csv")
+bodies_df = pd.read_csv("positions_0.csv")
 
 fig_3d = plt.figure(figsize=(10, 8))
 ax3d = fig_3d.add_subplot(111, projection='3d')
@@ -58,8 +58,8 @@ with open("octants.txt", "r") as file:
         draw_rectangle(ax_yz, (corners[1], corners[2], 0, corners[4], corners[5], 0), line_width=1)  
 
 ax_xy.scatter(bodies_df['X'], bodies_df['Y'], color='r', s=5)
-ax_xz.scatter(bodies_df['X'], bodies_df['Z'], color='r', s=10)
-ax_yz.scatter(bodies_df['Y'], bodies_df['Z'], color='r', s=10)
+ax_xz.scatter(bodies_df['X'], bodies_df['Z'], color='r', s=5)
+ax_yz.scatter(bodies_df['Y'], bodies_df['Z'], color='r', s=5)
 
 ax_xy.set_title('XY Plane')
 ax_xz.set_title('XZ Plane')

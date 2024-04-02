@@ -7,8 +7,8 @@
 //#include <mpi.h>
 
 
-const int N = 1000;
-const double theta = 0.2;
+const int N = 50;
+const double theta = 0.5;
 
 const double G = 4 * (3.14159216)*(3.14159216); 
 const double dt = 0.001; 
@@ -48,6 +48,7 @@ void Euler(Particle* particle, Vec3 force, double dt);
 void freeNode(Node* node);
 double randomDouble(double min, double max);
 void writePositionsToCSV(Particle* particles, int numParticles, const char* filename);
+void writeNodeToFile(Node *node, FILE *file);
 void Init_Particles2(Particle* particles, int N);
 
 int main() {
@@ -58,8 +59,8 @@ int main() {
     Vec3 rootMax = {70, 70, 70};
 
     // Init quantities
-    Init_Particles2(particles, N);
-    //Init_Particles(particles, N, rootMin, rootMax);
+    //Init_Particles2(particles, N);
+    Init_Particles(particles, N, rootMin, rootMax);
     Node* rootNode = Init_Node(rootMin, rootMax);
 
     // Initial insertion of particles into the tree
@@ -71,8 +72,13 @@ int main() {
 
     for (int step = 0; step < nSteps; step++) {
         // Write positions
-        sprintf(filename, "positions_%d.csv", step);
-        writePositionsToCSV(particles, N, filename);
+        if (step % 1 == 0)
+        {
+            sprintf(filename, "positions_%d.csv", step);
+            writePositionsToCSV(particles, N, filename);
+        }
+        
+
 
         // clean forces
         memset(force, 0, sizeof(force));
@@ -102,6 +108,10 @@ int main() {
 
 
     }
+
+    FILE *file = fopen("octants.txt", "w"); // Abre el archivo para escritura
+    writeNodeToFile(rootNode, file);
+    fclose(file);
 
 
     // CLEAN
@@ -403,10 +413,9 @@ void Force(Node* node, Particle* particle, Vec3* f ){
     Vec3 dir;
     double r_ij = distance(particle->position, node->centerOfMass);
 
-    if (r_ij < epsilon) return;
 
     // Avoid divergence
-    if (r_ij == epsilon) return;
+    if (r_ij <= epsilon) return;
 
     // size of node
     double nodeSize = node->bbox[1].x - node->bbox[0].x;
@@ -490,3 +499,16 @@ void writePositionsToCSV(Particle* particles, int numParticles, const char* file
 
 
 
+void writeNodeToFile(Node *node, FILE *file) {
+    if (node == NULL) return;
+    
+    // write limits of nodes
+    fprintf(file, "%f,%f,%f,%f,%f,%f\n",
+            node->bbox[0].x, node->bbox[0].y, node->bbox[0].z,
+            node->bbox[1].x, node->bbox[1].y, node->bbox[1].z);
+    
+    // Recursivity for childs
+    for (int ii = 0; ii < 8; ii++) {
+        writeNodeToFile(node->children[ii], file);
+    }
+}

@@ -12,7 +12,7 @@ const double theta = 0.5;
 //const double M_PI = 3.14159216;
 
 const double G = -4 * 3.14159216 * 3.14159216; 
-const double dt = 0.05; 
+const double dt = 0.001; 
 const int nSteps = 1200;
 const double epsilon = 1e-7;
 
@@ -265,7 +265,7 @@ void Insertbd(Node* node, body* bd) {
     }
 
     //If the node is a leaf but already contains a body, subdivide the node.
-    if (node->bd != NULL && node->totalMass != 0) {
+    if (node->bd != NULL && *node->totalMass != 0) {
         subdivideNode(node);  
     }
 

@@ -29,6 +29,7 @@ typedef struct Node{
     double *bbox[2];
     struct Node *children[8];
     body* bd;
+    //int *index;
 } Node;
 
 
@@ -75,6 +76,8 @@ int main() {
     FILE *file = fopen("octants.txt", "w"); // Abre el archivo para escritura
     writeNodeToFile(rootNode, file);
     fclose(file);
+
+    //calcular fuerzas
  
     freeBody(bd, N);
     free(force);
@@ -176,9 +179,9 @@ void Insertbd(Node* node, body* bd) {
 
     }
 
-
     Insertbd(node->children[newbodyIndex], bd);
 
+    // freeNode() liberar memoria del nodo ya que los hijos son los que tienen la informacin de los cuerpos
     // Update the parent node Center of Mass
     updateMassCenterOfMass(node, bd);
     
