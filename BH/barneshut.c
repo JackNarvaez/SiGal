@@ -6,15 +6,21 @@
 #include <time.h>
 //#include <mpi.h>
 
+#define RAND() ((double)rand()/(double)(RAND_MAX))
 
-const int N = 50;
+const int N = 1000;
 const double theta = 0.5;
 
 const double G = 4 * (3.14159216)*(3.14159216); 
 const double dt = 0.001; 
-const int nSteps = 1200;
+const int nSteps = 100000;
 const double epsilon = 1e-7;
 
+const double TPI = 2*3.14159265358979323846;
+double sqrt2; 
+double scaleftr; 
+double invsclftr; 
+double sqrtscldrt;
 
 typedef struct Vec3 {
     double x, y, z;
@@ -49,7 +55,17 @@ void freeNode(Node* node);
 double randomDouble(double min, double max);
 void writePositionsToCSV(Particle* particles, int numParticles, const char* filename);
 void writeNodeToFile(Node *node, FILE *file);
+
+
 void Init_Particles2(Particle* particles, int N);
+
+void spher2cartes(Vec3 * Vec, double r, double sclftr);
+double g(double x);
+double rndm(double min, double max);
+void frm2com(Particle *particles, int N);
+
+void adjust_units(Particle *particles, int N);
+void plummer_dist(Particle *particles, int N, double sqrt2, double invsclftr, double sqrtscldrt);
 
 int main() {
 
@@ -60,7 +76,15 @@ int main() {
 
     // Init quantities
     //Init_Particles2(particles, N);
-    Init_Particles(particles, N, rootMin, rootMax);
+    //Init_Particles(particles, N, rootMin, rootMax);
+
+    sqrt2 = sqrt(2.0);
+    scaleftr = 16.0 / (3.0 * TPI);
+    invsclftr = 1.0 / scaleftr;
+    sqrtscldrt = sqrt(scaleftr);
+
+
+    plummer_dist(particles, N, sqrt2, invsclftr,sqrtscldrt);
     Node* rootNode = Init_Node(rootMin, rootMax);
 
     // Initial insertion of particles into the tree
@@ -69,16 +93,17 @@ int main() {
     }
 
     char filename[nSteps];
-
+    int count =0;
     for (int step = 0; step < nSteps; step++) {
         // Write positions
-        if (step % 1 == 0)
+        
+        if (step % 100 == 0)
         {
-            sprintf(filename, "positions_%d.csv", step);
+            sprintf(filename, "/home/yo/Documents/NBodySimulations/BH/files/positions_%d.csv", count);
             writePositionsToCSV(particles, N, filename);
+            count++;
         }
         
-
 
         // clean forces
         memset(force, 0, sizeof(force));
@@ -109,7 +134,7 @@ int main() {
 
     }
 
-    FILE *file = fopen("octants.txt", "w"); // Abre el archivo para escritura
+    FILE *file = fopen("octants.txt", "w"); 
     writeNodeToFile(rootNode, file);
     fclose(file);
 
@@ -126,7 +151,7 @@ Node* Init_Node(Vec3 min, Vec3 max){
     Node* node = (Node*)malloc(sizeof(Node));
     if (node == NULL)
     {
-        fprintf(stderr, "Error al asignar memoria para el nodo\n");
+        fprintf(stderr, "Error allocation memory Node\n");
         exit(EXIT_FAILURE);
     }
 
@@ -147,6 +172,7 @@ Node* Init_Node(Vec3 min, Vec3 max){
 
 
 Node* createChildNodeForOctant(Node* parent, int octantIndex) {
+    // Calculate center point of the parent node
     Vec3 center = {
         (parent->bbox[0].x + parent->bbox[1].x) / 2,
         (parent->bbox[0].y + parent->bbox[1].y) / 2,
@@ -156,48 +182,22 @@ Node* createChildNodeForOctant(Node* parent, int octantIndex) {
     Vec3 min = parent->bbox[0];
     Vec3 max = parent->bbox[1];
 
-    // octant limits
-    switch (octantIndex) {
-        case 0: // Octant -x, -y, -z
-            max.x = center.x;
-            max.y = center.y;
-            max.z = center.z;
-            break;
-        case 1: // Octant -x, -y, +z
-            max.x = center.x;
-            max.y = center.y;
-            min.z = center.z;
-            break;
-        case 2: // Octant -x, +y, -z
-            max.x = center.x;
-            min.y = center.y;
-            max.z = center.z;
-            break;
-        case 3: // Octant -x, +y, +z
-            max.x = center.x;
-            min.y = center.y;
-            min.z = center.z;
-            break;
-        case 4: // Octant +x, -y, -z
-            min.x = center.x;
-            max.y = center.y;
-            max.z = center.z;
-            break;
-        case 5: // Octant +x, -y, +z
-            min.x = center.x;
-            max.y = center.y;
-            min.z = center.z;
-            break;
-        case 6: // Octant +x, +y, -z
-            min.x = center.x;
-            min.y = center.y;
-            max.z = center.z;
-            break;
-        case 7: // Octant +x, +y, +z
-            min.x = center.x;
-            min.y = center.y;
-            min.z = center.z;
-            break;
+    if (octantIndex & 1) { // If LSB is set, adjust z for upper half
+        min.z = center.z;
+    } else { // Lower half
+        max.z = center.z;
+    }
+
+    if (octantIndex & 2) { // Second bit, adjust y for upper half
+        min.y = center.y;
+    } else { // Lower half
+        max.y = center.y;
+    }
+
+    if (octantIndex & 4) { // Third bit, adjust x for upper half
+        min.x = center.x;
+    } else { // Lower half
+        max.x = center.x;
     }
 
     return Init_Node(min, max);
@@ -239,27 +239,26 @@ void Init_Particles2(Particle* particles, int N) {
     double galaxy_mass = N;
 
     for (size_t ii = 0; ii < N; ii++) {
-        // Distribución radial desde el centro de la galaxia
+        // Radial distribution
         double radius = ((double)rand() / RAND_MAX) * galaxy_radius;
         double theta = ((double)rand() / RAND_MAX) * 2 * 3.14159216; // Ángulo aleatorio en radianes
 
-        // Altura aleatoria para simular el espesor del disco de la galaxia
+        // Random height to simulate the thickness of the galaxy's disk
         double height = ((double)rand() / RAND_MAX) * disk_thickness - disk_thickness / 2;
 
-        // Conversión de coordenadas polares a cartesianas
+        // changue of coordinates
         particles[ii].position.x = center.x + radius * cos(theta);
         particles[ii].position.y = center.y + radius * sin(theta);
         particles[ii].position.z = center.z + height;
 
-        // Velocidad inicial: orbital simple para simular rotación galáctica
-        // La velocidad es perpendicular al radio para crear movimiento circular
-        double orbital_velocity = sqrt((G * galaxy_mass) / radius); // Fórmula simplificada
+        //Init Velocity: orbital velocity
+        double orbital_velocity = sqrt((G * galaxy_mass) / radius); 
         particles[ii].velocity.x = -orbital_velocity * sin(theta);
         particles[ii].velocity.y = orbital_velocity * cos(theta);
-        particles[ii].velocity.z = 0; // Sin movimiento inicial en la dirección Z
+        particles[ii].velocity.z = 0; 
 
-        // Masa
-        particles[ii].mass = 1.0; // Considera ajustar según la distribución de masa deseada
+        // Mass
+        particles[ii].mass = 1.0; 
     }
 }
 
@@ -271,38 +270,26 @@ int OctantIndex(Node* node, Particle* particle) {
         (node->bbox[0].z + node->bbox[1].z) / 2
     };
     
-    // Determine Octant
-    if (particle->position.x < center.x) {
-        if (particle->position.y < center.y) {
-            if (particle->position.z < center.z) {
-                return 0; // Octant -x, -y, -z
-            } else {
-                return 1; // Octant -x, -y, +z
-            }
-        } else {
-            if (particle->position.z < center.z) {
-                return 2; // Octant -x, +y, -z
-            } else {
-                return 3; // Octant -x, +y, +z
-            }
-        }
-    } else {
-        if (particle->position.y < center.y) {
-            if (particle->position.z < center.z) {
-                return 4; // Octant +x, -y, -z
-            } else {
-                return 5; // Octant +x, -y, +z
-            }
-        } else {
-            if (particle->position.z < center.z) {
-                return 6; // Octant +x, +y, -z
-            } else {
-                return 7; // Octant +x, +y, +z
-            }
-        }
-    }
-}
+    // Start with a base index of 0
+    int index = 0;
 
+    // Check the x dimension
+    if (particle->position.x >= center.x) {
+        index += 4; // x 
+    }
+
+    // Check the y dimension
+    if (particle->position.y >= center.y) {
+        index += + 2; // y 
+    }
+
+    // Check the z dimension
+    if (particle->position.z >= center.z) {
+        index += 1; // z 
+    }
+
+    return index;
+}
 
 void updateMassCenterOfMass(Node* node, Particle* particle){
     if (node->totalMass == 0){
@@ -413,7 +400,6 @@ void Force(Node* node, Particle* particle, Vec3* f ){
     Vec3 dir;
     double r_ij = distance(particle->position, node->centerOfMass);
 
-
     // Avoid divergence
     if (r_ij <= epsilon) return;
 
@@ -452,14 +438,14 @@ void Euler(Particle* particle, Vec3 force, double dt) {
                          force.z / particle->mass};
 
     // Update Velocity
-    particle->velocity.x += 0.5*acceleration.x * dt;
-    particle->velocity.y += 0.5*acceleration.y * dt;
-    particle->velocity.z += 0.5*acceleration.z * dt;
+    particle->velocity.x += acceleration.x * dt;
+    particle->velocity.y += acceleration.y * dt;
+    particle->velocity.z += acceleration.z * dt;
 
     // Update Positions
-    particle->position.x += 0.5*particle->velocity.x * dt;
-    particle->position.y += 0.5*particle->velocity.y * dt;
-    particle->position.z += 0.5*particle->velocity.z * dt;
+    particle->position.x += particle->velocity.x * dt;
+    particle->position.y += particle->velocity.y * dt;
+    particle->position.z += particle->velocity.z * dt;
 }
 
 
@@ -484,7 +470,7 @@ void freeNode(Node* node) {
 void writePositionsToCSV(Particle* particles, int numParticles, const char* filename) {
     FILE* file = fopen(filename, "w"); 
     if (file == NULL) {
-        printf("Error al abrir el archivo.\n");
+        printf("Error to open file.\n");
         return;
     }
 
@@ -511,4 +497,119 @@ void writeNodeToFile(Node *node, FILE *file) {
     for (int ii = 0; ii < 8; ii++) {
         writeNodeToFile(node->children[ii], file);
     }
+}
+
+
+
+
+
+void spher2cartes(Vec3 *vec, double r, double sclftr) {
+    double X1 = RAND();
+    double X2 = RAND();
+    double aux1 = (1.-2.*X1)*r;
+    double aux2 = sqrt(r*r - aux1*aux1)*sclftr;
+    vec->x = aux2 * cos(TPI*X2);
+    vec->y = aux2 * sin(TPI*X2);
+    vec->z = aux1*sclftr;
+}
+
+double g(double x) {
+    double x2 = x*x;
+    return x2 * pow(1 - x2, 3.5);
+}
+
+double rndm(double min, double max) {
+    return min + (max - min) * RAND();
+}
+
+void frm2com(Particle *particles, int N) {
+    Vec3 com_pos = {0.0, 0.0, 0.0}; // Center of mass position
+    Vec3 com_vel = {0.0, 0.0, 0.0}; // Center of mass velocity
+    for (int i = 0; i < N; i++) {
+        com_pos.x += particles[i].mass * particles[i].position.x;
+        com_pos.y += particles[i].mass * particles[i].position.y;
+        com_pos.z += particles[i].mass * particles[i].position.z;
+        com_vel.x += particles[i].mass * particles[i].velocity.x;
+        com_vel.y += particles[i].mass * particles[i].velocity.y;
+        com_vel.z += particles[i].mass * particles[i].velocity.z;
+    }
+
+    for (int i = 0; i < N; i++) {
+        particles[i].position.x -= com_pos.x;
+        particles[i].position.y -= com_pos.y;
+        particles[i].position.z -= com_pos.z;
+        particles[i].velocity.x -= com_vel.x;
+        particles[i].velocity.y -= com_vel.y;
+        particles[i].velocity.z -= com_vel.z;
+    }
+}
+
+void adjust_units(Particle *particles, int N) {
+    double epot = 0.0;
+    double ekin = 0.0;
+    double dist = 0.0;
+
+    for (int ii = 0; ii < N; ii++) {
+
+        Vec3 vi = particles[ii].velocity;
+        ekin += particles[ii].mass * (vi.x*vi.x + vi.y*vi.y + vi.z*vi.z) / 2;
+
+        for (int jj = ii + 1; jj < N; jj++) {
+            Vec3 r_ij = {particles[ii].position.x - particles[jj].position.x,
+                    particles[ii].position.y - particles[jj].position.y,
+                    particles[ii].position.z - particles[jj].position.z};
+
+            dist = sqrt(r_ij.x*r_ij.x + r_ij.y*r_ij.y + r_ij.z*r_ij.z);
+            epot -= particles[ii].mass * particles[jj].mass / dist;
+        }
+    }
+
+    double alpha = -2 * epot;
+    double beta = 0.5/sqrt(ekin);
+    for (int ii = 0; ii < N; ii++) {
+        particles[ii].position.x *= alpha;
+        particles[ii].position.y *= alpha;
+        particles[ii].position.z *= alpha;
+        particles[ii].velocity.x *= beta;
+        particles[ii].velocity.y *= beta;
+        particles[ii].velocity.z *= beta;
+    }
+}
+
+void plummer_dist(Particle *particles, int N, double sqrt2, double invsclftr, double sqrtscldrt) {
+
+    double X1, X2;
+    double cum_mass, r, Ve;
+    double m = 1.0/N;
+    double cum_mass_min = 0.0;
+    double cum_mass_max = m;
+
+    for (int ii = 0; ii < N; ii++) {
+        particles[ii].mass = m;
+
+        // Position
+        cum_mass = rndm(cum_mass_min, cum_mass_max);
+        cum_mass_min = cum_mass_max;
+        cum_mass_max += m;
+
+        r = 1.0 / sqrt(pow(cum_mass, -2.0/3.0) - 1.0);
+        Vec3 pos;
+        spher2cartes(&pos, r, invsclftr);
+        particles[ii].position = pos;
+
+        // Velocity
+        do {
+            X1 = RAND();
+            X2 = RAND();
+        } while (0.1*X2 >= g(X1));
+
+        Ve = sqrt2 * pow(1.0 + r*r, -0.25) * X1;
+        Vec3 vel;
+        spher2cartes(&vel, Ve, sqrtscldrt);
+        particles[ii].velocity = vel;
+    }
+
+    frm2com(particles, N);
+    adjust_units(particles, N);
+
 }

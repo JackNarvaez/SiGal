@@ -25,7 +25,7 @@ def draw_rectangle(ax, corners, line_width=0.5):
     ax.plot(*zip(*xy), color="k", lw=line_width)
 
 
-bodies_df = pd.read_csv("positions_0.csv")
+bodies_df = pd.read_csv("/home/yo/Documents/NBodySimulations/BH/files/positions_0.csv")
 
 fig_3d = plt.figure(figsize=(10, 8))
 ax3d = fig_3d.add_subplot(111, projection='3d')
@@ -38,7 +38,7 @@ with open("octants.txt", "r") as file:
 ax3d.scatter(bodies_df['X'], bodies_df['Y'], bodies_df['Z'], color='r', s=5)
 
 ax3d.set_title('3D View')
-plt.savefig('3D-Tree.png',dpi=600)
+plt.savefig('/home/yo/Documents/NBodySimulations/BH/files/3D-Tree.png',dpi=600)
 plt.show()
 
 
@@ -66,5 +66,5 @@ ax_xz.set_title('XZ Plane')
 ax_yz.set_title('YZ Plane')
 
 plt.tight_layout()
-plt.savefig('2D-Tree.png',dpi=600)
+plt.savefig('/home/yo/Documents/NBodySimulations/BH/files/2D-Tree.png',dpi=600)
 plt.show()

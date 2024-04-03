@@ -4,6 +4,7 @@
 #include <float.h>
 #include <math.h>
 #include <time.h>
+#include "plummer.h"
 //#include <mpi.h>
 
 
@@ -73,6 +74,7 @@ int main() {
 
     //Init_bodys2(bd, N, centerg);
     Init_bd(bd, N, rootMin, rootMax);
+    plummer_dist(bd.r, bd.v, bd.m, len[pId]);
     Node* rootNode = Init_Node(rootMin, rootMax);
 
     // Initial insertion of bodys into the tree
