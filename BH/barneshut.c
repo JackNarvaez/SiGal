@@ -8,12 +8,12 @@
 
 #define RAND() ((double)rand()/(double)(RAND_MAX))
 
-const int N = 1000;
+const int N = 10000;
 const double theta = 0.5;
 
 const double G = 4 * (3.14159216)*(3.14159216); 
 const double dt = 0.001; 
-const int nSteps = 100000;
+const int nSteps = 20000;
 const double epsilon = 1e-7;
 
 const double TPI = 2*3.14159265358979323846;
@@ -63,9 +63,10 @@ void spher2cartes(Vec3 * Vec, double r, double sclftr);
 double g(double x);
 double rndm(double min, double max);
 void frm2com(Particle *particles, int N);
-
 void adjust_units(Particle *particles, int N);
+
 void plummer_dist(Particle *particles, int N, double sqrt2, double invsclftr, double sqrtscldrt);
+void hernquist_dist(Particle *particles, int N, double sqrt2, double invsclftr, double sqrtscldrt);
 
 int main() {
 
@@ -84,7 +85,8 @@ int main() {
     sqrtscldrt = sqrt(scaleftr);
 
 
-    plummer_dist(particles, N, sqrt2, invsclftr,sqrtscldrt);
+    //plummer_dist(particles, N, sqrt2, invsclftr,sqrtscldrt);
+    hernquist_dist(particles, N, sqrt2, invsclftr,sqrtscldrt);
     Node* rootNode = Init_Node(rootMin, rootMax);
 
     // Initial insertion of particles into the tree
@@ -172,7 +174,6 @@ Node* Init_Node(Vec3 min, Vec3 max){
 
 
 Node* createChildNodeForOctant(Node* parent, int octantIndex) {
-    // Calculate center point of the parent node
     Vec3 center = {
         (parent->bbox[0].x + parent->bbox[1].x) / 2,
         (parent->bbox[0].y + parent->bbox[1].y) / 2,
@@ -182,22 +183,48 @@ Node* createChildNodeForOctant(Node* parent, int octantIndex) {
     Vec3 min = parent->bbox[0];
     Vec3 max = parent->bbox[1];
 
-    if (octantIndex & 1) { // If LSB is set, adjust z for upper half
-        min.z = center.z;
-    } else { // Lower half
-        max.z = center.z;
-    }
-
-    if (octantIndex & 2) { // Second bit, adjust y for upper half
-        min.y = center.y;
-    } else { // Lower half
-        max.y = center.y;
-    }
-
-    if (octantIndex & 4) { // Third bit, adjust x for upper half
-        min.x = center.x;
-    } else { // Lower half
-        max.x = center.x;
+    // octant limits
+    switch (octantIndex) {
+        case 0: // Octant -x, -y, -z
+            max.x = center.x;
+            max.y = center.y;
+            max.z = center.z;
+            break;
+        case 1: // Octant -x, -y, +z
+            max.x = center.x;
+            max.y = center.y;
+            min.z = center.z;
+            break;
+        case 2: // Octant -x, +y, -z
+            max.x = center.x;
+            min.y = center.y;
+            max.z = center.z;
+            break;
+        case 3: // Octant -x, +y, +z
+            max.x = center.x;
+            min.y = center.y;
+            min.z = center.z;
+            break;
+        case 4: // Octant +x, -y, -z
+            min.x = center.x;
+            max.y = center.y;
+            max.z = center.z;
+            break;
+        case 5: // Octant +x, -y, +z
+            min.x = center.x;
+            max.y = center.y;
+            min.z = center.z;
+            break;
+        case 6: // Octant +x, +y, -z
+            min.x = center.x;
+            min.y = center.y;
+            max.z = center.z;
+            break;
+        case 7: // Octant +x, +y, +z
+            min.x = center.x;
+            min.y = center.y;
+            min.z = center.z;
+            break;
     }
 
     return Init_Node(min, max);
@@ -227,7 +254,6 @@ void Init_Particles(Particle* particles, int N, Vec3 min, Vec3 max) {
         particles[ii].mass = 1.0; 
     }
 }
-
 
 
 void Init_Particles2(Particle* particles, int N) {
@@ -270,26 +296,38 @@ int OctantIndex(Node* node, Particle* particle) {
         (node->bbox[0].z + node->bbox[1].z) / 2
     };
     
-    // Start with a base index of 0
-    int index = 0;
-
-    // Check the x dimension
-    if (particle->position.x >= center.x) {
-        index += 4; // x 
+    // Determine Octant
+    if (particle->position.x < center.x) {
+        if (particle->position.y < center.y) {
+            if (particle->position.z < center.z) {
+                return 0; // Octant -x, -y, -z
+            } else {
+                return 1; // Octant -x, -y, +z
+            }
+        } else {
+            if (particle->position.z < center.z) {
+                return 2; // Octant -x, +y, -z
+            } else {
+                return 3; // Octant -x, +y, +z
+            }
+        }
+    } else {
+        if (particle->position.y < center.y) {
+            if (particle->position.z < center.z) {
+                return 4; // Octant +x, -y, -z
+            } else {
+                return 5; // Octant +x, -y, +z
+            }
+        } else {
+            if (particle->position.z < center.z) {
+                return 6; // Octant +x, +y, -z
+            } else {
+                return 7; // Octant +x, +y, +z
+            }
+        }
     }
-
-    // Check the y dimension
-    if (particle->position.y >= center.y) {
-        index += + 2; // y 
-    }
-
-    // Check the z dimension
-    if (particle->position.z >= center.z) {
-        index += 1; // z 
-    }
-
-    return index;
 }
+
 
 void updateMassCenterOfMass(Node* node, Particle* particle){
     if (node->totalMass == 0){
@@ -501,8 +539,6 @@ void writeNodeToFile(Node *node, FILE *file) {
 
 
 
-
-
 void spher2cartes(Vec3 *vec, double r, double sclftr) {
     double X1 = RAND();
     double X2 = RAND();
@@ -525,22 +561,22 @@ double rndm(double min, double max) {
 void frm2com(Particle *particles, int N) {
     Vec3 com_pos = {0.0, 0.0, 0.0}; // Center of mass position
     Vec3 com_vel = {0.0, 0.0, 0.0}; // Center of mass velocity
-    for (int i = 0; i < N; i++) {
-        com_pos.x += particles[i].mass * particles[i].position.x;
-        com_pos.y += particles[i].mass * particles[i].position.y;
-        com_pos.z += particles[i].mass * particles[i].position.z;
-        com_vel.x += particles[i].mass * particles[i].velocity.x;
-        com_vel.y += particles[i].mass * particles[i].velocity.y;
-        com_vel.z += particles[i].mass * particles[i].velocity.z;
+    for (int ii = 0; ii < N; ii++) {
+        com_pos.x += particles[ii].mass * particles[ii].position.x;
+        com_pos.y += particles[ii].mass * particles[ii].position.y;
+        com_pos.z += particles[ii].mass * particles[ii].position.z;
+        com_vel.x += particles[ii].mass * particles[ii].velocity.x;
+        com_vel.y += particles[ii].mass * particles[ii].velocity.y;
+        com_vel.z += particles[ii].mass * particles[ii].velocity.z;
     }
 
-    for (int i = 0; i < N; i++) {
-        particles[i].position.x -= com_pos.x;
-        particles[i].position.y -= com_pos.y;
-        particles[i].position.z -= com_pos.z;
-        particles[i].velocity.x -= com_vel.x;
-        particles[i].velocity.y -= com_vel.y;
-        particles[i].velocity.z -= com_vel.z;
+    for (int ii = 0; ii < N; ii++) {
+        particles[ii].position.x -= com_pos.x;
+        particles[ii].position.y -= com_pos.y;
+        particles[ii].position.z -= com_pos.z;
+        particles[ii].velocity.x -= com_vel.x;
+        particles[ii].velocity.y -= com_vel.y;
+        particles[ii].velocity.z -= com_vel.z;
     }
 }
 
@@ -598,10 +634,12 @@ void plummer_dist(Particle *particles, int N, double sqrt2, double invsclftr, do
         particles[ii].position = pos;
 
         // Velocity
-        do {
+        X1   = RAND();
+        X2   = RAND();
+        while (0.1*X2 < g(X1)) {
             X1 = RAND();
             X2 = RAND();
-        } while (0.1*X2 >= g(X1));
+        }
 
         Ve = sqrt2 * pow(1.0 + r*r, -0.25) * X1;
         Vec3 vel;
@@ -613,3 +651,44 @@ void plummer_dist(Particle *particles, int N, double sqrt2, double invsclftr, do
     adjust_units(particles, N);
 
 }
+
+
+void hernquist_dist(Particle *particles, int N, double sqrt2, double invsclftr, double sqrtscldrt) {
+    double X1, X2;
+    double cum_mass, r, Ve;
+    double m = 1.0/N;
+    double cum_mass_min = 0.0;
+    double cum_mass_max = m;
+
+
+    for (int ii = 0; ii < N; ii++) {
+        particles[ii].mass = m;
+
+        cum_mass = rndm(cum_mass_min, cum_mass_max);
+        cum_mass_min = cum_mass_max;
+        cum_mass_max += m;
+
+        r = sqrt(cum_mass) / (1 - sqrt(cum_mass)); 
+            
+        Vec3 pos;
+        spher2cartes(&pos, r, invsclftr); 
+        particles[ii].position = pos;
+
+        // Velocity
+        X1   = RAND();
+        while (X1 >= 0.9){
+            X1 = RAND();
+        }; 
+
+        // Calculamos la velocidad de escape proporcional para la partícula a una distancia r
+        Ve = (sqrt2 / sqrt(r + 1)) * X1;
+        Vec3 vel;
+        spher2cartes(&vel, Ve, sqrtscldrt);
+        particles[ii].velocity = vel;
+    }
+
+    frm2com(particles, N);
+    adjust_units(particles, N);
+}
+
+

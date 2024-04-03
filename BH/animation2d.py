@@ -3,13 +3,13 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import pandas as pd
 
-num_steps = 1000
+num_steps = 100
 
 def load_particle_positions(step):
     filename = f'/home/yo/Documents/NBodySimulations/BH/files/positions_{step}.csv'
     data = pd.read_csv(filename)
     x_positions = data['X'].values
-    y_positions = data['Y   '].values
+    y_positions = data['Y'].values
     # No necesitamos z_positions para la animación 2D
     return x_positions, y_positions
 
