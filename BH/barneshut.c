@@ -8,12 +8,12 @@
 
 #define RAND() ((double)rand()/(double)(RAND_MAX))
 
-const int N = 10000;
+const int N = 1000;
 const double theta = 0.5;
 
-const double G = 4 * (3.14159216)*(3.14159216); 
+const double G = 4 * (3.14159265358979323846)*(3.14159265358979323846); 
 const double dt = 0.001; 
-const int nSteps = 20000;
+const int nSteps = 10000;
 const double epsilon = 1e-7;
 
 const double TPI = 2*3.14159265358979323846;
@@ -21,6 +21,8 @@ double sqrt2;
 double scaleftr; 
 double invsclftr; 
 double sqrtscldrt;
+
+
 
 typedef struct Vec3 {
     double x, y, z;
@@ -40,7 +42,32 @@ typedef struct Node {
     Particle* particle;
 } Node;
 
+/* // Suma de vectores
+Vec3 Vec3_add(Vec3 a, Vec3 b) {
+    return (Vec3){a.x + b.x, a.y + b.y, a.z + b.z};
+}
 
+// Resta de vectores
+Vec3 Vec3_sub(Vec3 a, Vec3 b) {
+    return (Vec3){a.x - b.x, a.y - b.y, a.z - b.z};
+}
+
+// Multiplicación de un vector por un escalar
+Vec3 Vec3_scale(Vec3 v, double s) {
+    return (Vec3){v.x * s, v.y * s, v.z * s};
+}
+
+// Magnitud (longitud) de un vector
+double Vec3_magnitude(Vec3 v) {
+    return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+}
+
+// Normalizar un vector
+Vec3 Vec3_normalize(Vec3 v) {
+    double mag = Vec3_magnitude(v);
+    return Vec3_scale(v, 1.0 / mag);
+}
+ */
 Node* Init_Node(Vec3 min, Vec3 max);
 Node* createChildNodeForOctant(Node* parent, int octantIndex);
 int OctantIndex(Node* node, Particle* particle);
@@ -67,6 +94,11 @@ void adjust_units(Particle *particles, int N);
 
 void plummer_dist(Particle *particles, int N, double sqrt2, double invsclftr, double sqrtscldrt);
 void hernquist_dist(Particle *particles, int N, double sqrt2, double invsclftr, double sqrtscldrt);
+void initMiyamotoNagaiDisk(Particle* particles, int numParticles);
+
+void fuerza2(Node* node, Particle* particle, Vec3* f);
+double calcCircularVelocity(double R, double z, double M_disk, double a, double b);
+
 
 int main() {
 
@@ -85,8 +117,9 @@ int main() {
     sqrtscldrt = sqrt(scaleftr);
 
 
-    //plummer_dist(particles, N, sqrt2, invsclftr,sqrtscldrt);
-    hernquist_dist(particles, N, sqrt2, invsclftr,sqrtscldrt);
+    plummer_dist(particles, N, sqrt2, invsclftr,sqrtscldrt);
+    //hernquist_dist(particles, N, sqrt2, invsclftr,sqrtscldrt);
+    //initMiyamotoNagaiDisk(particles, N);
     Node* rootNode = Init_Node(rootMin, rootMax);
 
     // Initial insertion of particles into the tree
@@ -98,7 +131,8 @@ int main() {
     int count =0;
     for (int step = 0; step < nSteps; step++) {
         // Write positions
-        
+        //printf("step: %d\n", step);
+
         if (step % 100 == 0)
         {
             sprintf(filename, "/home/yo/Documents/NBodySimulations/BH/files/positions_%d.csv", count);
@@ -115,6 +149,7 @@ int main() {
 
             Vec3 f = {0, 0, 0}; 
             Force(rootNode, &particles[ii], &f);
+            //fuerza2(rootNode, &particles[ii], &f);
             force[ii] = f; 
         }
 
@@ -469,6 +504,7 @@ void Force(Node* node, Particle* particle, Vec3* f ){
 }
 
 
+
 void Euler(Particle* particle, Vec3 force, double dt) {
     // Calculate Aceleration
     Vec3 acceleration = {force.x / particle->mass, 
@@ -690,5 +726,4 @@ void hernquist_dist(Particle *particles, int N, double sqrt2, double invsclftr, 
     frm2com(particles, N);
     adjust_units(particles, N);
 }
-
 
