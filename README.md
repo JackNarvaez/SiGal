@@ -1,2 +1,2 @@
-# NBodySimulations
-N Body Simulations
+# SiGAL
+Simulations of Galaxies using N Body Simulations. 
