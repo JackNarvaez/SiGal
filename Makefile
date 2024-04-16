@@ -3,7 +3,8 @@ PRINTMSG=--no-print-directory
 .PHONY: setup
 
 setup:
-	@cd setup;${MAKE} $(PRINTMSG) $@;\
+	@mkdir Data
+	@cd setup;${MAKE} $(PRINTMSG) $@
 
 galaxy:
 	@cd src; ${MAKE} $(PRINTMSG) $@
