@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------------------
-The N-Body problem using MPI
+The N-Body problem
 -----------------------------------------------------------------------------*/
 
 #include <stdio.h>
@@ -69,7 +69,7 @@ int separated(const double * bdr, const Node* node) {
     }
 }
 
-void force(double * bda, const double * bdr, const double * bdm, const Node* node) {
+void force(double * bda, const double * bdr, const Node* node) {
     double xrel = node->CoM[0]-bdr[0];
     double yrel = node->CoM[1]-bdr[1];
     double zrel = node->CoM[2]-bdr[2];
@@ -78,19 +78,6 @@ void force(double * bda, const double * bdr, const double * bdm, const Node* nod
     bda[1] += F*yrel;
     bda[2] += F*zrel;
 }
-
-
-// !!! Calculate the path in which the tree is walked. 
-// void treeforce(Node* tree, double* bda, const double * bdr, const double * bdm) {
-//     Node* node = tree;
-//     while (node != NULL) {
-//         if (separated(bdr, node)){
-//             force(bda, bdr, bdm, node);
-//         } else{
-//             node = nextnode(node, pstnode);
-//         }
-//     }
-// }
 
 void printtree(Node* node) {
     if (node->type) {
@@ -103,11 +90,10 @@ void printtree(Node* node) {
     }
 }
 
-
-int main(int argc, char** argv) {
+int main() {
     
     int N = 100;     // Total number of bodies
-    body bd;                        // Bodies
+    body bd;         // Bodies
     
     bd.r = (double *) malloc(3*N*sizeof(double));        // [x, y, z]
     bd.rtemp = (double *) malloc(3*N*sizeof(double));    // [x, y, z]
@@ -135,16 +121,19 @@ int main(int argc, char** argv) {
         rootmin[ii] = -20;
         rootmax[ii] = 20;
     }
-    Node* Tree = BuiltTree(bd.r, bd.m, N, rootmin, rootmax);
-    printtree(Tree);
 
-    // Save positions
+    Node* Tree = BuiltTree(bd.r, bd.m, N, rootmin, rootmax);
+    //printtree(Tree);
+    freeNode(Tree);
+    
     free (bd.r);
     free (bd.rtemp);
     free (bd.v);
     free (bd.vtemp);
     free (bd.a);
     free (bd.m);
+    free (rootmin);
+    free (rootmax);
 
     return 0;
 }

@@ -3,15 +3,15 @@
 #include <string.h>
 #include <float.h>
 #include <math.h>
-// #include<unistd.h>
 #include "structures.h"
 
 
 Node* RootNode(const double *min, const double *max, const double * bdr, const double * bdm, const int N){
+    
     //Memory allocation
     Node* node = (Node *)malloc(sizeof(Node));
     if (node == NULL) {
-        fprintf(stderr, "Error Allocation Memory Init_Node\n");
+        fprintf(stderr, "Error Allocation Memory RootNode.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -22,10 +22,13 @@ Node* RootNode(const double *min, const double *max, const double * bdr, const d
     node->deep  = (int *)malloc(sizeof(int));           // deep
     node->slice = (int *)malloc(sizeof(int));           // Slicing addresses
     node->bodies= (int *)malloc((N+1)*sizeof(int));     // Particles in this node
-    node->next  = (Node *)malloc(sizeof(Node));         // Next Node
+    node->child = (Node *)malloc(sizeof(Node));         // Child Node
+    node->sibling= (Node *)malloc(sizeof(Node));        // Sibling Node
 
-    if (node->CoM == NULL || node->Mass == NULL || node->deep == NULL || node->min == NULL || node->max == NULL || node->slice == NULL || node->bodies == NULL) {
-        fprintf(stderr, "Error Allocation Memory in Init_Node\n");
+    if (node->CoM == NULL || node->Mass == NULL || node->deep == NULL || 
+        node->min == NULL || node->max == NULL || node->slice == NULL || node->bodies == NULL ||
+        node->child == NULL || node->sibling == NULL) {
+        fprintf(stderr, "Error Allocation Memory in RootNode's Features.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -56,23 +59,14 @@ Node* RootNode(const double *min, const double *max, const double * bdr, const d
 
     *node->slice    = 0;
     node->type      = (N>1)? false:true;
-    
-    node->child     = NULL;
-    node->sibling   = NULL;
     node->next      = NULL;
 
     return node;
 }
 
-Node* CreateNode(Node* father, double *rmin, double *rmax){
+void CreateNode(Node* node, Node* father, double *rmin, double *rmax){
 
     //Memory allocation
-    Node* node = (Node *)malloc(sizeof(Node));
-    if (node == NULL) {
-        fprintf(stderr, "Error Allocation Memory Init_Node\n");
-        exit(EXIT_FAILURE);
-    }
-
     node->CoM   = (double *)malloc(3 * sizeof(double)); // Center of mass
     node->min   = (double *)malloc(3 * sizeof(double)); // Low-left corner
     node->max   = (double *)malloc(3 * sizeof(double)); // Upper-right corner
@@ -80,10 +74,13 @@ Node* CreateNode(Node* father, double *rmin, double *rmax){
     node->deep  = (int *)malloc(sizeof(int));           // deep
     node->slice = (int *)malloc(sizeof(int));           // Slicing addresses
     node->bodies= (int *)malloc((father->bodies[0]+1)*sizeof(int));         // Particles in this node
-    node->next  = (Node *)malloc(sizeof(Node));         // Next Node
+    node->child = (Node *)malloc(sizeof(Node));         // Child Node
+    node->sibling= (Node *)malloc(sizeof(Node));        // Sibling Node
 
-    if (node->CoM == NULL || node->Mass == NULL || node->min == NULL || node->max == NULL || node->slice == NULL || node->bodies == NULL) {
-        fprintf(stderr, "Error Allocation Memory in Init_Node\n");
+    if (node->CoM == NULL || node->Mass == NULL || node->deep == NULL || 
+        node->min == NULL || node->max == NULL || node->slice == NULL || node->bodies == NULL ||
+        node->child == NULL || node->sibling == NULL) {
+        fprintf(stderr, "Error Allocation Memory in Node.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -100,12 +97,8 @@ Node* CreateNode(Node* father, double *rmin, double *rmax){
     *node->slice    = 0;
     node->bodies[0] = 0;
 
-    node->type      = true;
-
-    node->child     = NULL;
-    node->sibling   = NULL;
+    node->type      = true;    
     node->next      = NULL; 
-    return node;
 }
 
 void createChildren(Node* node, const int address) {
@@ -121,10 +114,10 @@ void createChildren(Node* node, const int address) {
     {
         // X slicing
         double med[3] = {0.5*(node->max[0]+node->min[0]), node->max[1], node->max[2]};
-        node->child = CreateNode(node, min, med);
+        CreateNode(node->child, node, min, med);
         med[1] = node->min[1];
         med[2] = node->min[2];
-        node->sibling = CreateNode(node, med, max);
+        CreateNode(node->sibling, node, med, max);
         break;
     }
     case 1:
@@ -132,24 +125,24 @@ void createChildren(Node* node, const int address) {
 
         // Y slicing
         double med[3] = {node->max[0], 0.5*(node->max[1]+node->min[1]), node->max[2]};
-        node->child = CreateNode(node, min, med);
+        CreateNode(node->child, node, min, med);
         med[0] = node->min[0];
         med[2] = node->min[2];
-        node->sibling = CreateNode(node, med, max);
+        CreateNode(node->sibling, node, med, max);
         break;
     }
     case 2:
     {
         // Z slicing
         double med[3] = {node->max[0], node->max[1], 0.5*(node->max[2]+node->min[2])};
-        node->child = CreateNode(node, min, med);
+        CreateNode(node->child, node, min, med);
         med[0] = node->min[0];
         med[1] = node->min[1];
-        node->sibling = CreateNode(node, med, max);
+        CreateNode(node->sibling, node, med, max);
         break;
     }
     default:
-        fprintf(stderr, "Error creating children\n");
+        fprintf(stderr, "Error creating children.\n");
         exit(EXIT_FAILURE);
         break;
     }
@@ -197,15 +190,26 @@ void DivideNode(Node* node, const double * bdr, const double * bdm) {
     updateCenterOfMass(node->child); 
     updateCenterOfMass(node->sibling);
 
-    if ((node->child)->bodies[0]>1) (node->child)->type = false; 
-    if ((node->sibling)->bodies[0]>1) (node->sibling)->type = false; 
-
+    if ((node->child)->bodies[0]>1) {
+        (node->child)->type = false;
+    } else {
+        free((node->child)->bodies);
+        free((node->child)->child);
+        free((node->child)->sibling);
+    } 
+    if ((node->sibling)->bodies[0]>1) {
+        (node->sibling)->type = false;
+    } else {
+        free((node->sibling)->bodies);
+        free((node->sibling)->child);
+        free((node->sibling)->sibling);
+    }
     free(node->bodies);
 }
 
-Node *nextnode(Node* node, int pstnode) {
+Node *nextnode(Node* node, int sense) {
     if (!node->type) {
-        if (pstnode==0){
+        if (sense==0){
             return node->child;
         } else{
             return node->next;
@@ -221,45 +225,58 @@ Node* BuiltTree(const double * bdr, const double * bdm, const int N, const doubl
     int pstnd   = *rootNode->deep;
     Node* Next  = rootNode->child;
     while (Next != rootNode){
-        // printf("ps = %d\t d = %d \t n= %d \t type = %d \n ", pstnd, *Next->deep, Next->bodies[0], Next->type);
-        if (!Next->type && Next->child == NULL){
+        if (!Next->type && pstnd<=*Next->deep){
             DivideNode(Next, bdr, bdm);
-            // printf("\t child=%d \t sib = %d\n", (Next->child)->bodies[0], (Next->sibling)->bodies[0]);
         }
-        if (pstnd<=*Next->deep) {
-            // printf("\t\t0\n");
-            pstnd   = *Next->deep;
+        bool sense = pstnd<=*Next->deep;
+        pstnd   = *Next->deep;
+        if (sense) {
             Next    = nextnode(Next, 0);
         } else {
-            // printf("\t\t1\n");
-            pstnd   = *Next->deep;
             Next    = nextnode(Next, 1);
         }
-        // sleep(0.5);
-
     }
     return rootNode;
 }
 
-void freeNode(Node* node) {
-    // Free Memory
-
-    if (node->CoM   != NULL) free(node->CoM);
-    if (node->Mass  != NULL) free(node->Mass);
-    if (node->deep  != NULL) free(node->deep);
-    if (node->slice != NULL) free(node->slice);
-    if (node->min   != NULL) free(node->min);
-    if (node->max   != NULL) free(node->max);
-    if (node->bodies!= NULL) free(node->bodies);
-    if (node->next  != NULL) free(node->next);
-    
-    
-    if (node->child != NULL) {
-        freeNode(node->child); // Recursivity
+void freeNode(Node * node){
+    int pstnd   = *node->deep;
+    Node* Next  = node->child;
+    while (Next != node){
+        bool sense = pstnd>*Next->deep;
+        pstnd   = *Next->deep;
+        if (Next->type){
+            free(Next->CoM);
+            free(Next->min);
+            free(Next->max);
+            free(Next->Mass);
+            free(Next->deep);
+            free(Next->slice);
+        } else {
+            if (sense) {
+                free(Next->CoM);
+                free(Next->min);
+                free(Next->max);
+                free(Next->Mass);
+                free(Next->deep);
+                free(Next->slice);
+                free(Next->child);
+                free(Next->sibling);
+            }
+        }
+        if (!sense) {
+            Next    = nextnode(Next, 0);
+        } else {
+            Next    = nextnode(Next, 1);
+        }
     }
-    if (node->sibling != NULL) {
-        freeNode(node->sibling); // Recursivity
-    }
-
+    free(node->CoM);
+    free(node->min);
+    free(node->max);
+    free(node->Mass);
+    free(node->deep);
+    free(node->slice);
+    free(node->child);
+    free(node->sibling);
     free(node);
 }

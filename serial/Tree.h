@@ -2,22 +2,22 @@
 #define TREE_H_
 #include "structures.h"
 
-Node* RootNode(const double *min, const double *max, const double * bdr, const double * bdm, const int N);
+Node* RootNode(const double *, const double *, const double *, const double *, const int);
 
-Node* CreateNode(Node* father, double *rmin, double *rmax);
+void CreateNode(Node *, Node *, double *, double *);
 
-void createChildren(Node* node, const int address);
+void createChildren(Node*, const int);
 
-void Insertbd(Node * node, const double * bdr, const double * bdm, const int ii) ;
+void Insertbd(Node *, const double *, const double *, const int);
 
-void updateCenterOfMass(Node * node);
+void updateCenterOfMass(Node *);
 
-void DivideNode(Node* node, const double * bdr, const double * bdm);
+void DivideNode(Node *, const double *, const double *);
 
-Node* nextnode(Node* node, int pstnode);
+Node* nextnode(Node *, int);
 
-Node* BuiltTree(const double * bdr, const double * bdm, const int N, const double * rootmin, const double * rootmax);
+Node* BuiltTree(const double *, const double *, const int, const double *, const double *);
 
-void freeNode(Node* node);
+void freeNode(Node*);
 
 #endif // TREE_H_

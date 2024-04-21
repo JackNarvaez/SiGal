@@ -1,3 +1,3 @@
 Print Tree:
- g++ mainserial.c Tree.c -o out
+ gcc mainserial.c Tree.c -o out -lm
  ./out
