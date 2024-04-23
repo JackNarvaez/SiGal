@@ -166,7 +166,7 @@ void updateCenterOfMass(Node * node){
     node->CoM[2] = invMass;
 }
 
-void DivideNode(Node* node, const double * bdr, const double * bdm) {
+void DivideNode(Node* node, const double * bdr, const double * bdm, const double eps) {
     // Find address for slicing
     double side[3] = {node->max[0]-node->min[0], node->max[1]-node->min[1], node->max[2]-node->min[2]};
     int slicingAddress = 0;
@@ -190,14 +190,14 @@ void DivideNode(Node* node, const double * bdr, const double * bdm) {
     updateCenterOfMass(node->child); 
     updateCenterOfMass(node->sibling);
 
-    if ((node->child)->bodies[0]>1) {
+    if ((node->child)->bodies[0]>1 && side[slicingAddress]>= eps) {
         (node->child)->type = false;
     } else {
         free((node->child)->bodies);
         free((node->child)->child);
         free((node->child)->sibling);
     } 
-    if ((node->sibling)->bodies[0]>1) {
+    if ((node->sibling)->bodies[0]>1 && side[slicingAddress]>= eps) {
         (node->sibling)->type = false;
     } else {
         free((node->sibling)->bodies);
@@ -219,14 +219,14 @@ Node *nextnode(Node* node, int sense) {
     }
 }
 
-Node* BuiltTree(const double * bdr, const double * bdm, const int N, const double * rootmin, const double * rootmax){
+Node* BuiltTree(const double * bdr, const double * bdm, const int N, const double * rootmin, const double * rootmax, const double eps){
     Node* rootNode = RootNode(rootmin, rootmax, bdr, bdm, N);
-    DivideNode(rootNode, bdr, bdm);
+    DivideNode(rootNode, bdr, bdm, eps);
     int pstnd   = *rootNode->deep;
     Node* Next  = rootNode->child;
     while (Next != rootNode){
         if (!Next->type && pstnd<=*Next->deep){
-            DivideNode(Next, bdr, bdm);
+            DivideNode(Next, bdr, bdm, eps);
         }
         bool sense = pstnd<=*Next->deep;
         pstnd   = *Next->deep;
