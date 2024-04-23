@@ -12,7 +12,6 @@ The N-Body problem
 const double THETA  = 0.75;
 const double G      = 1.0;
 
-
 void read_data(const char *File_address, double *Pos, double *Vel, double *Mass) {
     /*---------------------------------------------------------------------------
     Reads data from bodies: position, velocity and mass.
@@ -92,8 +91,9 @@ void printtree(Node* node) {
 
 int main() {
     
-    int N = 100;     // Total number of bodies
-    body bd;         // Bodies
+    int N = 10000;          // Total number of bodies
+    double eps = 1.e-05;    // stop parameter for node's side
+    body bd;                // Bodies
     
     bd.r = (double *) malloc(3*N*sizeof(double));        // [x, y, z]
     bd.rtemp = (double *) malloc(3*N*sizeof(double));    // [x, y, z]
@@ -102,7 +102,7 @@ int main() {
     bd.a = (double *) malloc(3*N*sizeof(double));        // [ax, ay, az]
     bd.m = (double *) malloc(N*sizeof(double));          // [m]
 
-    int ii;
+    int ii, jj;
     
     for (ii = 0; ii < 3*N; ii++) {
         bd.rtemp[ii] = 0.0;
@@ -117,13 +117,24 @@ int main() {
     double * rootmin = (double *) malloc(3*sizeof(double));        // [x, y, z]
     double * rootmax = (double *) malloc(3*sizeof(double));        // [x, y, z]
 
-    for (ii = 0; ii<3; ii++) {
-        rootmin[ii] = -20;
-        rootmax[ii] = 20;
+    for (jj = 0; jj<3; jj++) {
+        rootmax[jj] = 0.0;
     }
 
-    Node* Tree = BuiltTree(bd.r, bd.m, N, rootmin, rootmax);
-    //printtree(Tree);
+    for (ii = 0; ii<N; ii++) {
+        for (jj = 0; jj<3; jj++) {
+            if (fabs(bd.r[3*ii+jj]) > rootmax[jj]) {
+                rootmax[jj] = fabs(bd.r[3*ii+jj]);
+            }
+        }
+    }
+    for (jj = 0; jj<3; jj++) {
+        rootmin[jj] = -rootmax[jj];
+    }
+
+    Node* Tree = BuiltTree(bd.r, bd.m, N, rootmin, rootmax, eps);
+    printf("d\txmin\tymin\tzmin\txmax\tymax\tzmax\n");
+    printtree(Tree);
     freeNode(Tree);
     
     free (bd.r);
