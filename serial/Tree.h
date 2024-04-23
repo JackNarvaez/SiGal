@@ -12,11 +12,11 @@ void Insertbd(Node *, const double *, const double *, const int);
 
 void updateCenterOfMass(Node *);
 
-void DivideNode(Node *, const double *, const double *);
+void DivideNode(Node *, const double *, const double *, const double);
 
 Node* nextnode(Node *, int);
 
-Node* BuiltTree(const double *, const double *, const int, const double *, const double *);
+Node* BuiltTree(const double *, const double *, const int, const double *, const double *, const double);
 
 void freeNode(Node*);
 
