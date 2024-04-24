@@ -161,9 +161,9 @@ void Insertbd(Node * node, const double * bdr, const double * bdm, const int ii)
 
 void updateCenterOfMass(Node * node){
     double invMass = 1.0 / *node->Mass;
-    node->CoM[0] = invMass;
-    node->CoM[1] = invMass;
-    node->CoM[2] = invMass;
+    node->CoM[0] *= invMass;
+    node->CoM[1] *= invMass;
+    node->CoM[2] *= invMass;
 }
 
 void DivideNode(Node* node, const double * bdr, const double * bdm, const double eps) {
