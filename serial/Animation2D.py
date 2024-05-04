@@ -4,7 +4,7 @@ import matplotlib.animation as animation
 plt.style.use('dark_background')
 
 
-N = int(100)
+N = int(1000)
 dt = 0.001
 jump = int(100)
 
@@ -32,7 +32,7 @@ message = ax.text(0.0, 0.9, "", transform=ax.transAxes)
 scatter = ax.scatter(initial_x, initial_y, c='white', marker='.', s=1)
 
 # Setting the axes properties
-boundaries = 2.0
+boundaries = 5.0
 if boundaries:
     ax.set_xlim([-boundaries, boundaries])
     ax.set_ylim([-boundaries, boundaries])

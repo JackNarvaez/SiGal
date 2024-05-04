@@ -9,18 +9,17 @@ def read_parameters(prmts):
     ---------------------------------------------------------------------------
     Prmts:
     0       # Nb: Number of bodies in the galaxy
-    1       # i : Inclination of the galaxy (rads/pi)
-    2       # w : Angle in the xy plane of the galaxy (rads/pi)
+    1       # M : Mass of Galaxy
+    2       # r : Radius of Galaxy
     3       # dt: Time step
-    4       # r : Radius of Galaxy (AU)
-    5       # steps: Evolution steps
-    6       # jump: Data storage interval
+    4       # steps: Evolution steps
+    5       # jump: Data storage interval
     ------------------------------------------------------------------------"""
     data = loadtxt("../input")
     return data[prmts]
 
 
-N, dt, jump= read_parameters([0, 3, 6])
+N, R, dt, jump= read_parameters([0, 2, 3, 5])
 N = int(N)
 jump = int(jump)
 
@@ -47,7 +46,7 @@ message = ax.text(0.0, 0.9, "", transform=ax.transAxes)
 scatter = ax.scatter(initial_x, initial_y, c='white', marker='.', s=1)
 
 # Setting the axes properties
-boundaries = 2.0
+boundaries = 5.0*R
 if boundaries:
     ax.set_xlim([-boundaries, boundaries])
     ax.set_ylim([-boundaries, boundaries])
