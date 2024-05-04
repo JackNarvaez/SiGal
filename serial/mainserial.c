@@ -32,7 +32,7 @@ void printtree(Node* node);
 
 int main(int argc, char** argv) {
     
-    const int N = 100;     // Total number of bodies
+    const int N = 1000;     // Total number of bodies
     body bd;                        // Bodies
     double eps = 1.e-05;    // stop parameter for node's side
 

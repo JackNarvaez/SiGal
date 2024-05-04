@@ -15,14 +15,14 @@ int main(int argc, char** argv) {
     int nP;                         // Number of processes
     int tag{0};                     // Tag message
     int root{0};                    // Root process
-    double prmts[7];
+    double prmts[6];
 
     read_parameters("./input", prmts);
     
-    int steps = (int)prmts[5];      // Evolution steps
-    double dt = prmts[3];           // Time step
-    int jump  = (int) prmts[6];     // Data storage interval
     int N     = (int) prmts[0];     // Total number of bodies
+    double dt = prmts[3];           // Time step
+    int steps = (int)prmts[4];      // Evolution steps
+    int jump  = (int) prmts[5];     // Data storage interval
     MPI_Status status;
     body bd;                        // Bodies
 
