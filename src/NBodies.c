@@ -4,7 +4,7 @@
 #include <math.h>
 #include <string.h>
 
-const double G      = 4*pow(M_PI,2); 
+const double G      = 1.0;
 const double eps    = 0.025;
 const double eps2   = eps*eps;
 

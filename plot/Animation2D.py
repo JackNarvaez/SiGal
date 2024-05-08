@@ -44,9 +44,12 @@ message = ax.text(0.0, 0.9, "", transform=ax.transAxes)
 
 # Creating a scatter plot for N bodies
 scatter = ax.scatter(initial_x, initial_y, c='white', marker='.', s=1)
+boundaries = 7.0 * R
+ax.set_xlim([-boundaries, boundaries])
+ax.set_ylim([-boundaries, boundaries])
+plt.savefig("parallel.png")
 
 # Setting the axes properties
-boundaries = 5.0*R
 if boundaries:
     ax.set_xlim([-boundaries, boundaries])
     ax.set_ylim([-boundaries, boundaries])
@@ -57,5 +60,5 @@ if boundaries:
 scatter_ani = animation.FuncAnimation(fig, update_scatter, frames=steps, fargs=(scatter, message),
                                       interval=1, blit=True)
 
-scatter_ani.save('../Data/Evolution2D.gif', writer='pillow', fps=10)
+scatter_ani.save('../Data/Evolution2D.gif', writer='pillow', fps=30)
 plt.show()

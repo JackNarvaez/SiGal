@@ -18,8 +18,9 @@ int main(int argc, char** argv) {
     read_parameters("./input", prmts);
     
     int N     = (int) prmts[0];     // Total number of bodies
-    double M  = prmts[1];           // Total number of bodies
-    double R  = prmts[2];           // Total number of bodies
+    double M  = prmts[1];           // Total Mass of Galaxy
+    double R  = prmts[2];           // Parametrized Radius
+    int seed  = 1234;
 
     body bd;                        // Bodies
 
@@ -42,7 +43,7 @@ int main(int argc, char** argv) {
     bd.v = (double *) malloc(3*len[pId]*sizeof(double));        // [vx, vy, vz]
     bd.m = (double *) malloc(len[pId]*sizeof(double));          // [m]
     
-    plummer_dist(bd.r, bd.v, bd.m, len[pId], R, M);
+    plummer_dist(bd.r, bd.v, bd.m, len[pId], R, M, seed + pId);
     // Read local particles information
     char output[32] = "./Data/data";
     sprintf(output + strlen(output), "%d.txt", pId);

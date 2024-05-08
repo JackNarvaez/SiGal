@@ -154,9 +154,9 @@ void Insertbd(Node * node, const double * bdr, const double * bdm, const int ii)
     node->bodies[0] ++;
     node->bodies[node->bodies[0]] = ii;
     *node->Mass += *bdm;
-    node->CoM[0] += *bdm*bdr[0]; 
-    node->CoM[1] += *bdm*bdr[1]; 
-    node->CoM[2] += *bdm*bdr[2]; 
+    node->CoM[0] += *bdm * bdr[0]; 
+    node->CoM[1] += *bdm * bdr[1]; 
+    node->CoM[2] += *bdm * bdr[2]; 
 }
 
 void updateCenterOfMass(Node * node){
@@ -178,13 +178,15 @@ void DivideNode(Node* node, const double * bdr, const double * bdm, const double
 
     // Update
     int ii;
+    int bodyjj;
     bool branch;
-    for (ii=0; ii<node->bodies[0]; ii++) {
-        branch = (bdr[node->bodies[ii]+*node->slice] < (node->child)->max[*node->slice]) ? true:false;
+    for (ii=1; ii<node->bodies[0]+1; ii++) {
+        bodyjj = node->bodies[ii];
+        branch = (bdr[3*bodyjj+*node->slice] < (node->child)->max[*node->slice]) ? true:false;
         if (branch) {
-            Insertbd(node->child, &bdr[3*ii], &bdm[ii], ii);
+            Insertbd(node->child, &bdr[3*bodyjj], &bdm[bodyjj], bodyjj);
         } else {
-            Insertbd(node->sibling, &bdr[3*ii], &bdm[ii], ii);
+            Insertbd(node->sibling, &bdr[3*bodyjj], &bdm[bodyjj], bodyjj);
         }
     }
     updateCenterOfMass(node->child); 
@@ -208,6 +210,8 @@ void DivideNode(Node* node, const double * bdr, const double * bdm, const double
 }
 
 Node *nextnode(Node* node, int sense) {
+    // sense = 0 : Going down
+    // sense = 1 : Going up
     if (!node->type) {
         if (sense==0){
             return node->child;
@@ -228,13 +232,9 @@ Node* BuiltTree(const double * bdr, const double * bdm, const int N, const doubl
         if (!Next->type && pstnd<=*Next->deep){
             DivideNode(Next, bdr, bdm, eps);
         }
-        bool sense = pstnd<=*Next->deep;
+        bool sense = pstnd > *Next->deep;
         pstnd   = *Next->deep;
-        if (sense) {
-            Next    = nextnode(Next, 0);
-        } else {
-            Next    = nextnode(Next, 1);
-        }
+        Next    = nextnode(Next, sense);
     }
     return rootNode;
 }

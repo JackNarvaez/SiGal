@@ -17,7 +17,7 @@ void treeforce(Node* root, double* bdr, double* bda,const double* bdm, const int
 
 bool separated(const double * bdr, const Node* node);
 
-void force(double * bda, const double * bdr, const double * bdm, Node* node);
+void force(double * bda, const double * bdr, Node* node);
 
 void Euler(double *bdr, double *bdv, double *bda, const int N, const double dt);
 
@@ -33,8 +33,8 @@ void printtree(Node* node);
 int main(int argc, char** argv) {
     
     const int N = 1000;     // Total number of bodies
-    body bd;                        // Bodies
     double eps = 1.e-05;    // stop parameter for node's side
+    body bd;                // Bodies
 
     bd.r = (double *) malloc(3*N*sizeof(double));        // [x, y, z]
     bd.rtemp = (double *) malloc(3*N*sizeof(double));    // [x, y, z]
@@ -59,17 +59,17 @@ int main(int argc, char** argv) {
     double * rootmax = (double *) malloc(3*sizeof(double));        // [x, y, z]
     
     for (jj = 0; jj<3; jj++) {
-        rootmax[jj] = 0.0;
+        rootmax[jj] = 10.0;
     }
     
-    // Ajust limits of RootNode
-    for (ii = 0; ii<N; ii++) {
-        for (jj = 0; jj<3; jj++) {
-            if (fabs(bd.r[3*ii+jj]) > rootmax[jj]) {
-                rootmax[jj] = fabs(bd.r[3*ii+jj]);
-            }
-        }
-    }
+    // // Ajust limits of RootNode
+    // for (ii = 0; ii<N; ii++) {
+    //     for (jj = 0; jj<3; jj++) {
+    //         if (fabs(bd.r[3*ii+jj]) > rootmax[jj]) {
+    //             rootmax[jj] = fabs(bd.r[3*ii+jj]);
+    //         }
+    //     }
+    // }
     for (jj = 0; jj<3; jj++) {
         rootmin[jj] = -1.1*rootmax[jj];
         rootmax[jj] = -rootmin[jj];
@@ -90,26 +90,24 @@ int main(int argc, char** argv) {
         fclose(init_file);
     }
 
-
     // Calculate force
     for (int ii = 0; ii < Nsteps; ii++) { 
         memset(bd.a, 0, 3 * N * sizeof(double));
-        treeforce(Tree, bd.r, bd.a, bd.m, N);
-        Euler(bd.r, bd.v, bd.a, N, dt);
-
-        //PEFRL(bd.r, bd.v, bd.a,  bd.m, N, dt, rootmin,  rootmax, eps, Tree);
+        // treeforce(Tree, bd.r, bd.a, bd.m, N);
+        // Euler(bd.r, bd.v, bd.a, N, dt);
+        PEFRL(bd.r, bd.v, bd.a, bd.m, N, dt, rootmin, rootmax, eps, Tree);
 
         if (ii % jump == 0) { 
             writeTXT(bd.r,bd.m,  N, "Evolution.txt");
         }
-        printf("\n\n step = %d\n\n", ii);
+        printf("\n step = %d\n\n", ii);
         
         // Rebuild tree with new positions
-        freeNode(Tree);
-        Tree = BuiltTree(bd.r, bd.m, N, rootmin, rootmax, eps);
+        // freeNode(Tree);
+        // Tree = BuiltTree(bd.r, bd.m, N, rootmin, rootmax, eps);
     }
 
-    freeNode(Tree);
+    // freeNode(Tree);
     
 
     // Save positions
@@ -139,7 +137,7 @@ void treeforce(Node* root, double* bdr, double* bda,const double* bdm, const int
             //Leaf Node
             if (node->type) {
                 if (*node->Mass > 0) {     // Not empty leaf
-                    force(&bda[3*ii], &bdr[3*ii], &bdm[ii], node);
+                    force(&bda[3*ii], &bdr[3*ii], node);
                 }
             lastVisited = node;  
             node = node->next;         // Move to sibling or parent node
@@ -151,7 +149,7 @@ void treeforce(Node* root, double* bdr, double* bda,const double* bdm, const int
                     node = node->next;
                 } else {
                     if (separated(&bdr[3*ii], node)) {
-                        force(&bda[3*ii], &bdr[3*ii], &bdm[ii], node); 
+                        force(&bda[3*ii], &bdr[3*ii], node); 
                         lastVisited = node;  
                         node = node->next;
                         
@@ -163,7 +161,7 @@ void treeforce(Node* root, double* bdr, double* bda,const double* bdm, const int
             }
         }
     }
-    }
+}
 
 
 bool separated(const double * bdr, const Node* node) {
@@ -180,38 +178,35 @@ bool separated(const double * bdr, const Node* node) {
                       fmax(node->max[1] - node->min[1],
                            node->max[2] - node->min[2]));
 
-    bool Separated = (side / d < THETA);
+    bool Separated = (side / d) < THETA;
 
     return Separated;
 }
 
 
-void force(double * bda, const double * bdr, const double * bdm, Node* node) {
-
-    double xrel = node->CoM[0] - bdr[0];
-    double yrel = node->CoM[1] - bdr[1];
-    double zrel = node->CoM[2] - bdr[2];
-    double epsilon = 0.25;  // Softening parameter
-    double d = sqrt(xrel * xrel + yrel * yrel + zrel * zrel + epsilon * epsilon); 
-    double F = G * *node->Mass / (d * d * d);    
-    bda[0] += F * xrel;
-    bda[1] += F * yrel;
-    bda[2] += F * zrel;
-
+void force(double * Acc, const double * Pos, Node* node)
+{
+    double drelx, drely, drelz, epsgrav, dq2, inv_rtd2, cb_d2;
+    drelx = node->CoM[0] - Pos[0];
+    drely = node->CoM[1] - Pos[1];
+    drelz = node->CoM[2] - Pos[2];
+    epsgrav = 0.025;  // Softening parameter
+    dq2 = drelx * drelx + drely * drely + drelz * drelz + epsgrav * epsgrav; 
+    inv_rtd2 = 1./sqrt(dq2);
+    cb_d2 = inv_rtd2*inv_rtd2*inv_rtd2;   
+    Acc[0] += G* *node->Mass*drelx*cb_d2;
+    Acc[1] += G* *node->Mass*drely*cb_d2;
+    Acc[2] += G* *node->Mass*drelz*cb_d2;
 }
 
 
-void Euler(double *bdr, double *bdv, double *bda, int N, double dt) {
-    for (int ii = 0; ii < N; ii++) {
-        bdv[3*ii] += bda[3*ii] * dt; 
-        bdr[3*ii] += bdv[3*ii] * dt;  
-
-        bdv[3*ii + 1] += bda[3*ii + 1] * dt; 
-        bdr[3*ii + 1] += bdv[3*ii + 1] * dt;  
-
-        bdv[3*ii + 2] += bda[3*ii + 2] * dt;  
-        bdr[3*ii + 2] += bdv[3*ii + 2] * dt; 
-
+void Euler(double *Pos, double *Vel, double *Acc, int N, double dt) {
+    int ii, jj;
+    for (ii = 0; ii < N; ii++){
+        for (jj = 0; jj<3; jj++){
+            Vel[3*ii+jj] += Acc[3*ii+jj]*dt;
+            Pos[3*ii+jj] += Vel[3*ii+jj]*dt;
+        }
     }
 }
 
@@ -246,9 +241,6 @@ void PEFRL(double *bdr, double *bdv, double *bda, double *bdm, const int N, doub
     memcpy(X, bdr, 3 * N * sizeof(double));
     memcpy(V, bdv, 3 * N * sizeof(double));
 
-    
-    Tree = BuiltTree(X, bdm, N, rootmin, rootmax, eps);
-
     // Main loop
     int ii;
 
@@ -260,10 +252,9 @@ void PEFRL(double *bdr, double *bdv, double *bda, double *bdm, const int N, doub
     }
     
     // Calculate new forces again
-    freeNode(Tree);
     Tree = BuiltTree(X, bdm, N, rootmin, rootmax, eps);
-    treeforce(Tree, X, bda, bdm, N);  
-
+    treeforce(Tree, X, bda, bdm, N);
+    freeNode(Tree);  
 
     // update Velocities
     for (ii = 0; ii < N; ii++){
@@ -283,10 +274,9 @@ void PEFRL(double *bdr, double *bdv, double *bda, double *bdm, const int N, doub
 
   
     // Calculate new forces again
-    freeNode(Tree);
     Tree = BuiltTree(X, bdm, N, rootmin, rootmax, eps);
     treeforce(Tree, X, bda, bdm, N);
-
+    freeNode(Tree);
 
     // update Velocities
     for (ii = 0; ii < N; ii++){
@@ -304,9 +294,9 @@ void PEFRL(double *bdr, double *bdv, double *bda, double *bdm, const int N, doub
     memset(bda, 0, 3 * N * sizeof(double));
 
     // Calculate new forces again
-    freeNode(Tree);
     Tree = BuiltTree(X, bdm, N, rootmin, rootmax, eps);
     treeforce(Tree, X, bda, bdm, N);
+    freeNode(Tree);
 
     // update Velocities
     for (ii = 0; ii < N; ii++){
@@ -323,9 +313,9 @@ void PEFRL(double *bdr, double *bdv, double *bda, double *bdm, const int N, doub
     memset(bda, 0, 3 * N * sizeof(double));
   
     // Calculate new forces again
-    freeNode(Tree);
     Tree = BuiltTree(X, bdm, N, rootmin, rootmax, eps);
     treeforce(Tree, X, bda, bdm, N);
+    freeNode(Tree);
 
     // update real velocities
     for (ii = 0; ii < N; ii++){
@@ -341,7 +331,6 @@ void PEFRL(double *bdr, double *bdv, double *bda, double *bdm, const int N, doub
     }
 
     //freeNode(Tree);
-
     free(X);
     free(V);
 }
@@ -411,4 +400,3 @@ void printtree(Node* node) {
 
     }
 }
-

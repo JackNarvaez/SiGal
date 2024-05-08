@@ -69,7 +69,8 @@ void frm2com(double *Pos, double *Vel, double *Mass, const int N) {
 // Generate a Plummer sphere of mass M and parametrized radius R.        //
 // rmax=5R, which is 94% of the total mass for the Plummer distribution. //
 //---------------------------------------------------------------------- //
-void plummer_dist(double *Pos, double *Vel, double *Mass, const int N, const double R, const double M) {
+void plummer_dist(double *Pos, double *Vel, double *Mass, const int N, const double R, const double M, const double seed) {
+    srand(seed);
     double X1, X2, X3;
     double r, Ve;
     double m = 1.0/N;
