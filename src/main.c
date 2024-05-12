@@ -33,13 +33,20 @@ int main(int argc, char** argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &pId);
     
     // Length of each proccess
-    int * len = (int *) malloc(nP * sizeof(int));
+    int len[nP], counts[nP], displacements3[nP], displacements1[nP];
 
     int ii, end, begin;
     for(ii=0; ii<nP; ii++){
         end = double(N)/nP*(ii+1);
         begin = double(N)/nP*ii;
         len[ii] = end-begin;
+        counts[ii] = 3*len[ii];
+    }
+    displacements1[0] = 0;
+    displacements3[0] = 0;
+    for (ii=1; ii<nP; ii++) {
+        displacements1[ii] = displacements1[ii-1] + len[ii-1];
+        displacements3[ii] = displacements3[ii-1] + counts[ii-1];
     }
 
     bd.r = (double *) malloc(3*len[pId]*sizeof(double));        // [x, y, z]
@@ -51,10 +58,23 @@ int main(int argc, char** argv) {
         bd.a[ii] = 0.0;
     }
 
-    // Read local particles information
-    char input[32] = "./Data/data";
-    sprintf(input + strlen(input), "%d.txt", pId);
-    read_data(input, bd.r, bd.v, bd.m);
+    body GlobBds;
+    GlobBds.r = NULL;
+    GlobBds.v = NULL;
+    GlobBds.m = NULL;
+
+    if (pId == root) {
+        GlobBds.r = (double *) malloc(3*N*sizeof(double));        // [x, y, z]
+        GlobBds.v = (double *) malloc(3*N*sizeof(double));        // [vx, vy, vz]
+        GlobBds.m = (double *) malloc(N*sizeof(double));          // [m]
+
+        char input[32] = "./Data/IniData.txt";
+        read_data(input, GlobBds.r, GlobBds.v, GlobBds.m);
+    }
+
+    MPI_Scatterv(GlobBds.r, counts, displacements3, MPI_DOUBLE, bd.r, 3*len[pId], MPI_DOUBLE, root, MPI_COMM_WORLD);
+    MPI_Scatterv(GlobBds.v, counts, displacements3, MPI_DOUBLE, bd.v, 3*len[pId], MPI_DOUBLE, root, MPI_COMM_WORLD);
+    MPI_Scatterv(GlobBds.m, len, displacements1, MPI_DOUBLE, bd.m, len[pId], MPI_DOUBLE, root, MPI_COMM_WORLD);
 
     double * rootmin = (double *) malloc(3*sizeof(double));        // [x, y, z]
     double * rootmax = (double *) malloc(3*sizeof(double));        // [x, y, z]
@@ -76,6 +96,9 @@ int main(int argc, char** argv) {
     Evolution(bd.r, bd.v, bd.m, bd.a, rootmin, rootmax, Tree, N, len, tag, pId, nP, root, status, steps, dt, jump);
     
     if (pId == root) {
+        free(GlobBds.r);
+        free(GlobBds.v);
+        free(GlobBds.m);
         double end = MPI_Wtime();
         double time_ms = end-start;
         printf("\n%lf\t%d\n", time_ms, nP);
@@ -84,7 +107,6 @@ int main(int argc, char** argv) {
     /*Finalizes MPI*/
     MPI_Finalize();
 
-    free (len);
     free (bd.r);
     free (bd.v);
     free (bd.a);
