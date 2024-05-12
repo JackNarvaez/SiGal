@@ -2,5 +2,5 @@
 1.0     # M : Mass of Galaxy
 1.0     # r : Radius of Galaxy
 0.001   # dt: Time step
-10000   # steps: Evolution steps
+5000   # steps: Evolution steps
 100     # jump: Data storage interval

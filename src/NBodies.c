@@ -3,99 +3,132 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include "structures.h"
+#include "Tree.h"
 
+// Global Constants
 const double G      = 1.0;
-const double eps    = 0.025;
-const double eps2   = eps*eps;
+const double EPSG   = 0.025;
+const double EPSG2  = EPSG*EPSG;
+const double THETA  = 0.5;
+const double THETA2 = THETA*THETA;
 
-typedef void (*function)(const double *, const double *, double *, const int *, const int, const int, const int, const int, const int, MPI_Status);
-typedef void (*Integrator)(double *, double *, const double *, double *, double *, double *, const double, const int, function, const int *, const int, const int, const int, const int, MPI_Status);
+// PEFRL Parameters
+const double XI     = 0.1786178958448091;
+const double LAMBDA = -0.2123418310626054;
+const double CHI    = -0.06626458266981849;
 
-void Gravitational_Acc(double * Acc, const double * Pos0, const double * Pos1, const double * Mass1, const int len0, const int len1) {
-    /*---------------------------------------------------------------------------
-    Calculates the gravitational acceleration on bodies in Pos0 due to bodies in 
-    Pos1.
-    -----------------------------------------------------------------------------
-    Arguments:
-      Acc   :   Acceleration of bodies in Pos0 (1D vector).
-      Pos0  :   Position of local bodies.
-      Pos1  :   Position of shared bodies in the ring.
-      Mass1 :   Mass of shared bodies.
-      len0  :   Number of local bodies.
-      len1  :   Size of Pos1.
-    ---------------------------------------------------------------------------*/
-                     // Gravitational constant [Msun*AU]
-    int ii, jj;
-    double drelx, drely, drelz, dq2, inv_rtd2, cb_d2;
-    for(ii = 0; ii < len0; ii++){
-        for(jj = 0; jj < len1; jj++){
-            drelx = Pos1[3*jj]-Pos0[3*ii];
-            drely = Pos1[3*jj+1]-Pos0[3*ii+1];
-            drelz = Pos1[3*jj+2]-Pos0[3*ii+2];
-            dq2 = drelx*drelx+drely*drely+drelz*drelz;
-            dq2 += eps2;                   // Smoothing Density
-            inv_rtd2 = 1./sqrt(dq2);
-            cb_d2 = inv_rtd2*inv_rtd2*inv_rtd2;
-	        Acc[3*ii]+=G*Mass1[jj]*drelx*cb_d2;
-	        Acc[3*ii+1]+=G*Mass1[jj]*drely*cb_d2;
-	        Acc[3*ii+2]+=G*Mass1[jj]*drelz*cb_d2;
+const double UM2LAMBDAU2 = 0.5*(1.0-2*LAMBDA);
+const double UM2CHIXI = 1.0-2*(CHI+XI);
+
+// Distance criterion for computing of gravity force
+bool FarDistance(const double* Pos, const Node* node)
+{
+    double xrel = node->CoM[0] - Pos[0];
+    double yrel = node->CoM[1] - Pos[1];
+    double zrel = node->CoM[2] - Pos[2];
+
+    double d2   = xrel * xrel + yrel * yrel + zrel * zrel;
+
+    // Find the maximum side length of the node
+    double side = node->max[0] - node->min[0];
+    if (node->max[1] - node->min[1] > side) side = node->max[1] - node->min[1];
+    if (node->max[2] - node->min[2] > side) side = node->max[2] - node->min[2];
+
+    bool cond = (side*side / d2) < THETA2;
+
+    return cond;
+}
+
+// Compute gravitation force for Body(Pos) due to Node
+void Forcei(double* Acc, const double* Pos, Node* node)
+{
+    double dx, dy, dz, dq2, inv_rtd2, cb_d2, F;
+    dx  = node->CoM[0] - Pos[0];
+    dy  = node->CoM[1] - Pos[1];
+    dz  = node->CoM[2] - Pos[2];
+    dq2 = dx*dx + dy*dy + dz*dz + EPSG2; 
+    inv_rtd2 = 1./sqrt(dq2);
+    cb_d2 = inv_rtd2*inv_rtd2*inv_rtd2;
+    F = G* *node->Mass*cb_d2;
+    Acc[0] += F*dx;
+    Acc[1] += F*dy;
+    Acc[2] += F*dz;
+}
+
+// Compute gravitational force for all local bodies
+void GravitationalAccTree(Node* root, const double* Pos, double* Acc, const int Nloc)
+{
+    int ii;
+    for (ii = 0; ii < Nloc; ++ii) {
+        Node* node = root;
+        Node* lastVisited = NULL;  // Last visited node
+
+        while (node != NULL) {
+            if (node == root && lastVisited != NULL) {
+                break; 
+            }
+            //Leaf Node
+            if (node->type) {
+                if (*node->Mass > 0) {     // Not empty leaf
+                    Forcei(&Acc[3*ii], &Pos[3*ii], node);
+                }
+            lastVisited = node;  
+            node = node->next;         // Move to sibling or parent node
+            } 
+            // Internal node
+            else {
+                if (lastVisited == node->sibling) {  
+                    lastVisited = node;    // Last visited is the sibling (down to up)
+                    node = node->next;
+                } else {
+                    if (FarDistance(&Pos[3*ii], node)) {
+                        Forcei(&Acc[3*ii], &Pos[3*ii], node); 
+                        lastVisited = node;  
+                        node = node->next;
+                    }else {
+                        lastVisited = node;  
+                        node = node->child;  // Move to the first child
+                    }
+                }
+            }
         }
     }
 }
 
-void Acceleration(const double * Pos, const double * Mass, double * Acc, const int *len, const int N, const int tag, const int pId, const int nP, const int root, MPI_Status status){
-    /*---------------------------------------------------------------------------
-    Calculates the gravitational acceleration for each body due to all others.
-    -----------------------------------------------------------------------------
-    Arguments:
-      Pos   :   Position of local bodies (1D vector).
-      Mass  :   Mass of local bodies (1D vector).
-      Acc   :   Acceleration of local bodies (1D vector).
-      len   :   Array with the number of bodies per node.
-      N     :   Total bodies.
-      tag   :   Message tag.
-      pId   :   Process identity.
-      nP    :   Number of processes.
-      root  :   Root process.
-      status:   Status object.
-    ---------------------------------------------------------------------------*/
-    
+// Ring Method for global calculation of the accelerations
+void Acceleration(Node* Tree, const double* Pos, double* Acc, const int* len, const int N, const int tag, const int pId, const int nP, const int root, MPI_Status status)
+{
     int max = N/nP+1;
 
     //  Temporal arrays for saving data of shared bodies along the ring
     double *BufferPos = (double *) malloc(3*(len[pId]+1)*sizeof(double));
-    double *BufferMass = (double *) malloc((len[pId]+1)*sizeof(double));
 
-    for (int ii=0; ii < len[pId]; ii++){
-        BufferPos[3*ii]   = Pos[3*ii];
-        BufferPos[3*ii+1] = Pos[3*ii+1];
-        BufferPos[3*ii+2] = Pos[3*ii+2];
-        BufferMass[ii]    = Mass[ii];
+    int ii, jj;
+    for (ii=0; ii < len[pId]; ii++) {
+        for (jj=0; jj < 3; jj++) {
+            BufferPos[3*ii + jj] = Pos[3*ii + jj];
+        }
     }
-
-    BufferPos[3*len[pId]]   = 0.0;
-    BufferPos[3*len[pId]+1] = 0.0;
-    BufferPos[3*len[pId]+2] = 0.0;
-    BufferMass[len[pId]]    = 0.0;
-  
-    //  Gravitational acceleration due to local particles
-    Gravitational_Acc(Acc, Pos, Pos, Mass, len[pId], len[pId]);
+    for (jj=0; jj < 3; jj++) {
+        BufferPos[3*len[pId] + jj] = 0.0;
+    }
   
     /*The Ring Loop*/
-    int dst= (pId+1)%nP;
-    int scr= (pId-1+nP)%nP;
+    int dst = (pId+1)%nP;
+    int scr = (pId-1+nP)%nP;
   
-    for (int jj=0; jj<nP-1; jj++){
+    for (jj=0; jj<nP; jj++){
         MPI_Sendrecv_replace(BufferPos, 3*max, MPI_DOUBLE, dst, tag, scr, tag, MPI_COMM_WORLD, &status);
-        MPI_Sendrecv_replace(BufferMass, max, MPI_DOUBLE, dst, tag, scr, tag, MPI_COMM_WORLD, &status);
-        Gravitational_Acc(Acc, Pos, BufferPos, BufferMass, len[pId], len[(scr-jj+nP)%nP]);
+        MPI_Sendrecv_replace(Acc, 3*max, MPI_DOUBLE, dst, tag, scr, tag, MPI_COMM_WORLD, &status);
+        GravitationalAccTree(Tree, BufferPos, Acc, len[(scr-jj+nP)%nP]);
     }
 
     free(BufferPos);
-    free(BufferMass);
 }
 
-void Save_vec(FILE *File, const double *Pos, const double *Mass, const int N) {
+void Save_vec(FILE *File, const double *Pos, const double *Mass, const int N)
+{
     /*---------------------------------------------------------------------------
     Saves info from Pos and Mass in File.
     -----------------------------------------------------------------------------
@@ -111,7 +144,8 @@ void Save_vec(FILE *File, const double *Pos, const double *Mass, const int N) {
     }
 }
 
-void Save_data(const double * Pos, const double * Mass, const int *len, const int N, const int tag, const int pId, const int nP, const int root, MPI_Status status){
+void Save_data(const double * Pos, const double * Mass, const int *len, const int N, const int tag, const int pId, const int nP, const int root, MPI_Status status)
+{
     /*---------------------------------------------------------------------------
     Saves positions and masses of all bodies in Evolution.txt.
     -----------------------------------------------------------------------------
@@ -158,36 +192,18 @@ void Save_data(const double * Pos, const double * Mass, const int *len, const in
     }
 }
 
-void Euler(double * Pos, double * Vel, const double * Mass, double * Acc, double *X, double *V, const double dt, const int N, function Accel, const int * len, const int tag, const int pId, const int nP, const int root, MPI_Status status){
-    /*---------------------------------------------------------------------------
-    Euler method to calculate position and velocity at next time step.
-    -----------------------------------------------------------------------------
-    Arguments:
-      Pos   :   Position of bodies (1D vector).
-      Vel   :   Velocity of bodies (1D vector).
-      Mass  :   Mass of bodies (1D vector).
-      Acc   :   Accelerations (1D vector).
-      dt    :   Time step.
-      N     :   Total number of bodies.
-      Accel :   Function to calculate acceleration.
-      len   :   Array with the number of bodies per node.
-      tag   :   Message tag.
-      pId   :   Process identity.
-      nP    :   Number of processes.
-      root  :   Root process.
-      status:   Status object.
-    ---------------------------------------------------------------------------*/
-    Accel(Pos, Mass, Acc, len, N, tag, pId, nP, root, status);
+void EULER(double* R, const double* DR, const double coeff, const double dt, const int Nloc)
+{
     int ii, jj;
-    for (ii = 0; ii < len[pId]; ii++){
-        for (jj = 0; jj<3; jj++){
-            Vel[3*ii+jj] += Acc[3*ii+jj]*dt;
-            Pos[3*ii+jj] += Vel[3*ii+jj]*dt;
+    for (ii = 0; ii < Nloc; ii++) {
+        for (jj = 0; jj < 3; jj++) {
+            R[3*ii+jj] +=  coeff*dt*DR[3*ii+jj];
         }
     }
 }
 
-void PEFRL(double * Pos, double * Vel, const double * Mass, double *Acc, double *X, double *V, const double dt, const int N, function Accel, const int * len, const int tag, const int pId, const int nP, const int root, MPI_Status status){
+void PEFRL(double* Pos, double* Vel, const double* Mass, double*Acc, const double* rootmin, const double* rootmax, Node* Tree, const double dt, const int N, const int * len, const int tag, const int pId, const int nP, const int root, MPI_Status status)
+{
     /*---------------------------------------------------------------------------
     Position Extended Forest-Ruth Like method to calculate position and velocity
     at next time step.
@@ -199,7 +215,6 @@ void PEFRL(double * Pos, double * Vel, const double * Mass, double *Acc, double 
       Acc   :   Accelerations (1D vector).
       dt    :   Time step.
       N     :   Total number of bodies.
-      Accel :   Function to calculate acceleration.
       len   :   Array with the number of bodies per node.
       tag   :   Message tag.
       pId   :   Process identity.
@@ -207,79 +222,45 @@ void PEFRL(double * Pos, double * Vel, const double * Mass, double *Acc, double 
       root  :   Root process.
       status:   Status object.
     ---------------------------------------------------------------------------*/
-    int local_particles = len[pId];
+    int Nloc = len[pId];
 
-    // Temporal arrays
+    EULER(Pos, Vel, XI, dt, Nloc);
+    memset(Acc, 0, 3 * Nloc * sizeof(double));
 
-    X = Pos;
-    V = Vel;
-
-    // PEFRL Parameters
-    double xi = 0.1786178958448091e+0;
-    double gamma = -0.2123418310626054e+0;
-    double chi = -0.6626458266981849e-1;
-
-    // Main loop
-    int ii;
-    for(ii = 0; ii < local_particles; ii++){
-        X[3*ii] += xi*dt*V[3*ii];
-        X[3*ii+1] += xi*dt*V[3*ii+1];
-        X[3*ii+2] += xi*dt*V[3*ii+2];
-    }
+    // Move 1
+    Tree = BuiltTree(Pos, Mass, Nloc, rootmin, rootmax);
+    Acceleration(Tree, Pos, Acc, len, N, tag, pId, nP, root, status);
+    freeNode(Tree);
+    EULER(Vel, Acc, UM2LAMBDAU2, dt, Nloc);
+    EULER(Pos, Vel, CHI, dt, Nloc);
+    memset(Acc, 0, 3 * Nloc * sizeof(double));
   
-    Accel(X, Mass, Acc, len, N, tag, pId, nP, root, status);
-    for (ii = 0; ii < local_particles; ii++){
-        V[3*ii] +=  0.5*(1.-2*gamma)*dt*Acc[3*ii];
-        V[3*ii+1] +=  0.5*(1.-2*gamma)*dt*Acc[3*ii+1];
-        V[3*ii+2] +=  0.5*(1.-2*gamma)*dt*Acc[3*ii+2];
-    }
-    for (ii = 0; ii < local_particles; ii++){
-        X[3*ii] += chi*dt*V[3*ii];
-        X[3*ii+1] += chi*dt*V[3*ii+1];
-        X[3*ii+2] += chi*dt*V[3*ii+2];
-    }
-    for (ii = 0; ii < 3*local_particles; ii++) Acc[ii] = 0.0;
-  
-    Accel(X, Mass, Acc, len, N, tag, pId, nP, root, status);
-    for (ii = 0; ii < local_particles; ii++){
-        V[3*ii] += gamma*dt*Acc[3*ii];
-        V[3*ii+1] += gamma*dt*Acc[3*ii+1];
-        V[3*ii+2] += gamma*dt*Acc[3*ii+2];
-    }
-    for (ii = 0; ii < local_particles; ii++){
-        X[3*ii] += (1.-2*(chi+xi))*dt*V[3*ii];
-        X[3*ii+1] += (1.-2*(chi+xi))*dt*V[3*ii+1];
-        X[3*ii+2] += (1.-2*(chi+xi))*dt*V[3*ii+2];
-    }
-    for (ii = 0; ii < 3*local_particles; ii++) Acc[ii] = 0.0;
+    // Move 2
+    Tree = BuiltTree(Pos, Mass, Nloc, rootmin, rootmax);
+    Acceleration(Tree, Pos, Acc, len, N, tag, pId, nP, root, status);
+    freeNode(Tree); 
+    EULER(Vel, Acc, LAMBDA, dt, Nloc);
+    EULER(Pos, Vel, UM2CHIXI, dt, Nloc);
+    memset(Acc, 0, 3 * Nloc * sizeof(double));
 
-    Accel(X, Mass, Acc, len, N, tag, pId, nP, root, status);
-    for (ii = 0; ii < local_particles; ii++){
-        V[3*ii] += gamma*dt*Acc[3*ii];
-        V[3*ii+1] += gamma*dt*Acc[3*ii+1];
-        V[3*ii+2] += gamma*dt*Acc[3*ii+2];
-    }
-    for (ii = 0; ii < local_particles; ii++){
-        X[3*ii] += chi*dt*V[3*ii];
-        X[3*ii+1] += chi*dt*V[3*ii+1];
-        X[3*ii+2] += chi*dt*V[3*ii+2];
-    }
-    for (ii = 0; ii < 3*local_particles; ii++) Acc[ii] = 0.0;
-  
-    Accel(X, Mass, Acc, len, N, tag, pId, nP, root, status);
-    for (ii = 0; ii < local_particles; ii++){
-        Vel[3*ii] = V[3*ii]+0.5*(1.-2*gamma)*dt*Acc[3*ii];
-        Vel[3*ii+1] = V[3*ii+1]+0.5*(1.-2*gamma)*dt*Acc[3*ii+1];
-        Vel[3*ii+2] = V[3*ii+2]+0.5*(1.-2*gamma)*dt*Acc[3*ii+2];
-    }
-    for (ii = 0; ii < local_particles; ii++){
-        Pos[3*ii] = X[3*ii]+xi*dt*Vel[3*ii];
-        Pos[3*ii+1] = X[3*ii+1]+xi*dt*Vel[3*ii+1];
-        Pos[3*ii+2] = X[3*ii+2]+xi*dt*Vel[3*ii+2];
-    }
+    // Move 3
+    Tree = BuiltTree(Pos, Mass, Nloc, rootmin, rootmax);
+    Acceleration(Tree, Pos, Acc, len, N, tag, pId, nP, root, status);
+    freeNode(Tree); 
+    EULER(Vel, Acc, LAMBDA, dt, Nloc);
+    EULER(Pos, Vel, CHI, dt, Nloc);
+    memset(Acc, 0, 3 * Nloc * sizeof(double));
+
+    // Move 4
+    Tree = BuiltTree(Pos, Mass, Nloc, rootmin, rootmax);
+    Acceleration(Tree, Pos, Acc, len, N, tag, pId, nP, root, status);
+    freeNode(Tree); 
+    EULER(Vel, Acc, UM2LAMBDAU2, dt, Nloc);
+    EULER(Pos, Vel, XI, dt, Nloc);
 }
 
-void Evolution(double *Pos, double *Vel, const double *Mass, double * Acc, double * postemp, double * veltemp, const int * len, const int N, const int tag, const int pId, const int nP, const int root, MPI_Status status, const int steps, const double dt, const int jump, function Accel, Integrator evol){
+void Evolution(double* Pos, double* Vel, const double* Mass, double* Acc, const double* rootmin, const double* rootmax, Node *Tree, const int N, const int * len, const int tag, const int pId, const int nP, const int root, MPI_Status status, const int steps, const double dt, const int jump)
+{
     /*---------------------------------------------------------------------------
     Evolution of the system of bodies under gravitational interactions.
     -----------------------------------------------------------------------------
@@ -309,8 +290,11 @@ void Evolution(double *Pos, double *Vel, const double *Mass, double * Acc, doubl
     Save_data(Pos, Mass, len, N, tag, pId, nP, root, status);
     int ii, jj;
     for (ii = 0; ii < steps; ii++){
-        evol(Pos, Vel, Mass, Acc, postemp, veltemp, dt, N, Accel, len, tag, pId, nP, root, status);
-        if ( ii%jump == 0) Save_data(Pos, Mass, len, N, tag, pId, nP, root, status);
+        PEFRL(Pos, Vel, Mass, Acc, rootmin, rootmax, Tree, dt, N, len, tag, pId, nP, root, status);
+        if ( ii%jump == 0) {
+            Save_data(Pos, Mass, len, N, tag, pId, nP, root, status);
+            if (pId==root) printf("%d\n", ii/jump);
+        }
         for (jj = 0; jj < 3*len[pId]; jj++) Acc[jj] = 0.0;
     }
 }

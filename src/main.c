@@ -8,6 +8,7 @@ The N-Body problem using MPI
 #include <string.h>
 #include "NBodies.h"
 #include "structures.h"
+#include "Tree.h"
 #include "data.h"
 
 int main(int argc, char** argv) {
@@ -42,15 +43,11 @@ int main(int argc, char** argv) {
     }
 
     bd.r = (double *) malloc(3*len[pId]*sizeof(double));        // [x, y, z]
-    bd.rtemp = (double *) malloc(3*len[pId]*sizeof(double));        // [x, y, z]
     bd.v = (double *) malloc(3*len[pId]*sizeof(double));        // [vx, vy, vz]
-    bd.vtemp = (double *) malloc(3*len[pId]*sizeof(double));        // [vx, vy, vz]
     bd.a = (double *) malloc(3*len[pId]*sizeof(double));        // [ax, ay, az]
     bd.m = (double *) malloc(len[pId]*sizeof(double));          // [m]
     
-    for (int ii = 0; ii < 3*len[pId]; ii++) {
-        bd.rtemp[ii] = 0.0;
-        bd.vtemp[ii] = 0.0;
+    for (ii = 0; ii < 3*len[pId]; ii++) {
         bd.a[ii] = 0.0;
     }
 
@@ -59,10 +56,24 @@ int main(int argc, char** argv) {
     sprintf(input + strlen(input), "%d.txt", pId);
     read_data(input, bd.r, bd.v, bd.m);
 
+    double * rootmin = (double *) malloc(3*sizeof(double));        // [x, y, z]
+    double * rootmax = (double *) malloc(3*sizeof(double));        // [x, y, z]
+    
+    for (ii = 0; ii<3; ii++) {
+        rootmax[ii] = 10.0;
+    }
+
+    for (ii = 0; ii<3; ii++) {
+        rootmin[ii] = -1.1*rootmax[ii];
+        rootmax[ii] = -rootmin[ii];
+    } 
+
+    Node* Tree = BuiltTree(bd.r, bd.m, N, rootmin, rootmax);
+
     double start = MPI_Wtime();
 
     // Save positions
-    Evolution(bd.r, bd.v, bd.m, bd.a, bd.rtemp, bd.vtemp, len, N, tag, pId, nP, root, status, steps, dt, jump, Acceleration, PEFRL);
+    Evolution(bd.r, bd.v, bd.m, bd.a, rootmin, rootmax, Tree, N, len, tag, pId, nP, root, status, steps, dt, jump);
     
     if (pId == root) {
         double end = MPI_Wtime();
@@ -75,11 +86,11 @@ int main(int argc, char** argv) {
 
     free (len);
     free (bd.r);
-    free (bd.rtemp);
     free (bd.v);
-    free (bd.vtemp);
     free (bd.a);
     free (bd.m);
+    free (rootmax);
+    free (rootmin);
 
     return 0;
 }
