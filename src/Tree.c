@@ -117,7 +117,7 @@ void createChildren(Node* node, const int address)
     case 0:
     {
         // X slicing
-        double med[3] = {0.5*(node->max[0]+node->min[0]), node->max[1], node->max[2]};
+        double med[3] = {node->CoM[0], node->max[1], node->max[2]};
         CreateNode(node->child, node, min, med);
         med[1] = node->min[1];
         med[2] = node->min[2];
@@ -128,7 +128,7 @@ void createChildren(Node* node, const int address)
     {
 
         // Y slicing
-        double med[3] = {node->max[0], 0.5*(node->max[1]+node->min[1]), node->max[2]};
+        double med[3] = {node->max[0], node->CoM[1], node->max[2]};
         CreateNode(node->child, node, min, med);
         med[0] = node->min[0];
         med[2] = node->min[2];
@@ -138,7 +138,7 @@ void createChildren(Node* node, const int address)
     case 2:
     {
         // Z slicing
-        double med[3] = {node->max[0], node->max[1], 0.5*(node->max[2]+node->min[2])};
+        double med[3] = {node->max[0], node->max[1], node->CoM[2]};
         CreateNode(node->child, node, min, med);
         med[0] = node->min[0];
         med[1] = node->min[1];
