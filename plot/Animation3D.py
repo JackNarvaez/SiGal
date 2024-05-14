@@ -1,8 +1,8 @@
-from numpy import loadtxt
+from numpy import loadtxt, array, fromfile, float64, array
 import matplotlib.pyplot as plt
-plt.style.use('dark_background')
 import mpl_toolkits.mplot3d.axes3d as p3
 import matplotlib.animation as animation
+plt.style.use('dark_background')
 
 def read_parameters(prmts):
     """------------------------------------------------------------------------
@@ -19,24 +19,31 @@ def read_parameters(prmts):
     data = loadtxt("../input")
     return data[prmts]
 
+def read_data(file_path, N, coords):
+    data = fromfile(file_path, dtype=float64)
+    x = data[coords[0]:3*N+coords[0]:3]
+    y = data[coords[1]:3*N+coords[1]:3]
+    z = data[coords[2]:3*N+coords[2]:3]
+    return x, y, z
 
-N, R, dt, jump= read_parameters([0, 2, 3, 5])
+N, R, dt, steps, jump = read_parameters([0, 2, 3, 4, 5])
 N = int(N)
 jump = int(jump)
+steps = int(steps)//jump
 
-x, y, z, m = loadtxt("../Data/Evolution.txt", unpack=1)    # Evolution
-steps = x.size // N # Printed steps
+#plot
+xi = 0
+yi = 1
+zi = 2
 
 # Extract the initial positions of the particles
-initial_x = x[:N]
-initial_y = y[:N]
-initial_z = z[:N]
+initial_x, initial_y, initial_z = read_data("../Data/Ev_0", N, [xi,yi,zi])
 
 def update_scatter(num, scatter, message):
-    message.set_text(f"t = {num*jump*dt: .2f} yr")
-    scatter._offsets3d = (x[num*N:(num+1)*N], y[num*N:(num+1)*N], z[num*N:(num+1)*N])
+    message.set_text(f"t = {(num+1)*jump*dt: .2f} yr")
+    x, y, z = read_data("../Data/Ev_"+str(num), N, [xi,yi,zi])
+    scatter._offsets3d = array([x, y, z])
     return scatter, message
-
 
 # Attaching 3D axis to the figure
 fig = plt.figure()
@@ -58,8 +65,7 @@ if boundaries:
     ax.set_zlabel('z [au]')
 
 # Creating the Animation object
-scatter_ani = animation.FuncAnimation(fig, update_scatter, frames=steps, fargs=(scatter, message),
-                                      interval=1, blit=True)
+scatter_ani = animation.FuncAnimation(fig, update_scatter, frames=steps, fargs=(scatter, message), interval=1, blit=True, repeat=False)
 
-scatter_ani.save('../Data/Evolution.gif', writer='pillow', fps=10)
+scatter_ani.save('../Data/Evolution3D.gif', writer='pillow', fps=10)
 plt.show()
