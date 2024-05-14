@@ -1,8 +1,8 @@
 CC=mpic++
 CFLAGS=-Wall -Werror
-COPTS=-O0
-DEPS=NBodies.h structures.h Tree.h data.h
-SRC=main.c NBodies.c Tree.c data.c
+COPTS=-O3
+DEPS=nbodies.h structures.h tree.h data.h parallel.h
+SRC=main.c nbodies.c tree.c data.c parallel.c
 OBJ=${SRC:.c=.o}
 
 %.o: %.c $(DEPS)
