@@ -1,4 +1,3 @@
-#include "kuzmin.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -27,22 +26,23 @@ double epicyclic_frequency(double r) {
     return sqrt(2) * kuzmin_velocity(r) / r;
 }
 
-double surface_density(double r, double M, double a) {
-    return (M / (2 * M_PI)) * pow(1 + r*r, -1.5);
+double surface_density(double r) {
+    return (M_c / (2 * M_PI)) * pow(1 + r*r, -1.5);
 }
 
-double radial_velocity_dispersion(double r, double G, double M, double a) {
+double radial_velocity_dispersion(double r) {
     double kappa = epicyclic_frequency(r);
-    double sigma = surface_density(r, M, a);
+    double sigma = surface_density(r);
     return (Q * 3.36 * G * sigma) / kappa;
 }
 
-double tangential_velocity_dispersion(double r, double G, double M) {
-    return (3.36 * G * M_c) / (2 * r * epicyclic_frequency(r));
+double tangential_velocity_dispersion(double r) {
+    double sigma = surface_density(r);
+    return (3.36 * G * M_c* sigma ) / (2 * r * epicyclic_frequency(r));
 }
 
-double vertical_velocity_dispersion(double r, double G, double M) {
-    return 0.5 * tangential_velocity_dispersion(r, G, M);
+double vertical_velocity_dispersion(double r) {
+    return 0.5 * tangential_velocity_dispersion(r);
 }
 
 //---------------------------------------------------------------------- //
