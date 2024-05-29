@@ -9,7 +9,7 @@
 
 // Global Constants
 const double G      = 1.0;
-const double EPSG   = 0.025;
+const double EPSG   = 0.0001;
 const double EPSG2  = EPSG*EPSG;
 const double THETA  = 0.5;
 const double THETA2 = THETA*THETA;
