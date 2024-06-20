@@ -32,11 +32,11 @@ void spher2cartes(double * Vec, double r) {
 //---------------------------------------------------------------------- //
 // Probability distribution of velocity.                                 //
 //---------------------------------------------------------------------- //
-double g(double x) {
-    double x2 = x*x;
-    double E = x2*(1-x2);
-    double sqrE = sqrt(-E);
-    return 1.0 / pow(1+E, 5.0/2.0) * (3.0*asin(sqrE) + sqrE*sqrt(1+E) * (1.0+2.0*E)*(8.0*E*E + 8.0*E-3.0));
+double g(double q) {
+    double q2 = q*q;
+    double E = q2;
+    double sqrE = sqrt(E);
+    return 1.0 / pow(1-E, 5.0/2.0) * (3.0*asin(sqrE) + sqrE*sqrt(1-E) * (1.0-2.0*E)*(8.0*E*E - 8.0*E - 3.0));
 }
 
 //---------------------------------------------------------------------- //
