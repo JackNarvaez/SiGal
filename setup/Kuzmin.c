@@ -19,9 +19,8 @@ double rand_normal(double mean, double stddev) {
 }
 
 double kuzmin_velocity(double r) {
-    return sqrt(G * M_c * r * r / pow(r * r + 1, 3.0 / 2.0));
+    return sqrt( (G * M_c * r * r) / pow(r * r + 1, 3.0 / 2.0) );
 }
-
 
 double epicyclic_frequency(double r) {
     return sqrt(2) * kuzmin_velocity(r) / r;
@@ -39,7 +38,7 @@ double radial_velocity_dispersion(double r) {
 
 double tangential_velocity_dispersion(double r) {
     double sigma = surface_density(r);
-    return (3.36 * G * M_c * sigma) / (2 * r * epicyclic_frequency(r));
+    return (3.36 * G * sigma) / ( 2/sqrt(2) * epicyclic_frequency(r));
 }
 
 double vertical_velocity_dispersion(double r) {
@@ -100,7 +99,7 @@ void kuzmin_disk(double *Pos, double *Vel, double *Mass, const int N, const doub
 
         sigma_rad = radial_velocity_dispersion(r);
         sigma_tan = tangential_velocity_dispersion(r);
-        sigma_z = vertical_velocity_dispersion(r);
+        sigma_z   = vertical_velocity_dispersion(r);
 
         double vr = rand_normal(0, sigma_rad);
         double vtheta = rand_normal(kuzmin_velocity(r), sigma_tan);
