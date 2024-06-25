@@ -9,8 +9,8 @@ The N-Body problem using MPI
 //#include "plummer.h"
 //#include "hernquist.h"
 //#include "kepler.h"
-//#include "Kuzmin.h"
-#include "exponential.h"
+#include "Kuzmin.h"
+//#include "exponential.h"
 #include "../src/structures.h"
 #include "../src/data.h"
 
@@ -58,7 +58,9 @@ int main(int argc, char** argv) {
     //plummer_dist(bd.r, bd.v, bd.m, len[pId], R, M, seed + pId);
     //hernquist_dist(bd.r, bd.v, bd.m, len[pId], R, M, seed + pId);
     //keplerian_disk(bd.r, bd.v, bd.m, len[pId], R, M, seed + pId);
-    exponential_disk(bd.r, bd.v, bd.m, len[pId], R, M, seed + pId);
+    //exponential_disk(bd.r, bd.v, bd.m, len[pId], R, M, seed + pId);
+    kuzmin_disk(bd.r, bd.v, bd.m, len[pId], R, M, seed + pId);
+
 
 
     body GlobBds;
