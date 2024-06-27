@@ -19,7 +19,7 @@ double rand_normal(double mean, double stddev) {
 }
 
 double exponential_velocity(double r) {
-    return sqrt(G * M_c * (1.0 - exp(-r / 1.0)) / r);
+    return sqrt(G * M_c * r * exp(-r / 1.0));
 }
 
 double epicyclic_frequency(double r) {
@@ -38,8 +38,7 @@ double radial_velocity_dispersion(double r) {
 
 double tangential_velocity_dispersion(double r) {
     double sigma = surface_density_exponential(r);
-
-    return (3.36 * G * M_c* sigma) / (2 * r * epicyclic_frequency(r));
+    return (3.36 * G * sigma) / ( 2/sqrt(2) * epicyclic_frequency(r));
 }
 
 double vertical_velocity_dispersion(double r) {
@@ -78,14 +77,23 @@ void frm2com(double *Pos, double *Vel, double *Mass, const int N) {
     }
 }
 
-// Función para inicializar un disco exponencial con dispersión de velocidades
+
+double sample_exponential_radius(double R) {
+    double r; 
+    do {
+        r = - 1.0* log(rand_uniform(0, 1)); // Método de muestreo por transformada inversa
+    } while (r > 5*R);
+    return r;
+}
+
+
 void exponential_disk(double *Pos, double *Vel, double *Mass, const int N, const double M, const double R, const double seed) {
     srand(seed);
     double r, theta, sigma_rad, sigma_tan, sigma_z;
 
     for (int ii = 0; ii < N; ii++) {
         theta = rand_uniform(0, 2 * M_PI);
-        r = - 1.0* log(rand_uniform(0, 1));  // Método de muestreo por transformada inversa
+        r = sample_exponential_radius(R);  
 
         Pos[3 * ii] = r * cos(theta);
         Pos[3 * ii + 1] = r * sin(theta);
@@ -93,7 +101,7 @@ void exponential_disk(double *Pos, double *Vel, double *Mass, const int N, const
 
         sigma_rad = radial_velocity_dispersion(r);
         sigma_tan = tangential_velocity_dispersion(r);
-        sigma_z = vertical_velocity_dispersion(r);
+        sigma_z   = vertical_velocity_dispersion(r);
 
         double vr = rand_normal(0, sigma_rad);
         double vtheta = exponential_velocity(r) + rand_normal(0, sigma_tan);

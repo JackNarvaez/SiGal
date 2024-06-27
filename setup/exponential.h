@@ -10,6 +10,7 @@ double epicyclic_frequency(double);
 double radial_velocity_dispersion(double);
 double tangential_velocity_dispersion(double);
 double vertical_velocity_dispersion(double);
+double sample_exponential_radius(double );
 double surface_density_exponential(double);
 
 #endif // EXPONENTIAL_H_
