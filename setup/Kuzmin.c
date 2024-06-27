@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <mpi.h>
-
 #define G 1.0
 #define M_c 1.0         // Mass central body
 #define Q 1.5           // Toomre Parameter
@@ -75,15 +74,17 @@ void frm2com(double *Pos, double *Vel, double *Mass, const int N) {
     }
 }
 
-// Inverse CDF sampling for Kuzmin disk radius
 double sample_kuzmin_radius(double R) {
-    double r, u, density_max = M_c / (2 * M_PI * R * R); // Densidad máxima en r = 0
+    double r, u, density, density_max;
     do {
-        r = rand_uniform(0, 7 * R);
-        u = rand_uniform(0, density_max);
-    } while (u > surface_density(r));
+        r = rand_uniform(0, 15 * R);
+        u = rand_uniform(0, 1);
+        density = surface_density(r);
+        density_max = surface_density(0); // Densidad máxima en r = 0
+    } while (u > density / density_max);
     return r;
 }
+
 
 void kuzmin_disk(double *Pos, double *Vel, double *Mass, const int N, const double R, const double M, const double seed) {
     srand(seed);
