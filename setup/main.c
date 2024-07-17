@@ -7,9 +7,9 @@ The N-Body problem using MPI
 #include <stdlib.h>
 #include <string.h>
 //#include "plummer.h"
-//#include "hernquist.h"
+#include "hernquist.h"
 //#include "kepler.h"
-#include "Kuzmin.h"
+//#include "Kuzmin.h"
 //#include "exponential.h"
 #include "../src/structures.h"
 #include "../src/data.h"
@@ -56,10 +56,10 @@ int main(int argc, char** argv) {
     bd.m = (double *) malloc(len[pId]*sizeof(double));          // [m]
     
     //plummer_dist(bd.r, bd.v, bd.m, len[pId], R, M, seed + pId);
-    //hernquist_dist(bd.r, bd.v, bd.m, len[pId], R, M, seed + pId);
+    hernquist_dist(bd.r, bd.v, bd.m, len[pId], R, M, seed + pId);
     //keplerian_disk(bd.r, bd.v, bd.m, len[pId], R, M, seed + pId);
     //exponential_disk(bd.r, bd.v, bd.m, len[pId], R, M, seed + pId);
-    kuzmin_disk(bd.r, bd.v, bd.m, len[pId], R, M, seed + pId);
+    //kuzmin_disk(bd.r, bd.v, bd.m, len[pId], R, M, seed + pId);
 
 
 

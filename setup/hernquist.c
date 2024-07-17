@@ -32,11 +32,12 @@ void spher2cartes(double * Vec, double r) {
 //---------------------------------------------------------------------- //
 // Probability distribution of velocity.                                 //
 //---------------------------------------------------------------------- //
+// Probability distribution of velocity.
 double g(double q) {
-    double q2 = q*q;
+    double q2 = q * q;
     double E = q2;
-    double sqrE = sqrt(E);
-    return 1.0 / pow(1-E, 5.0/2.0) * (3.0*asin(sqrE) + sqrE*sqrt(1-E) * (1.0-2.0*E)*(8.0*E*E - 8.0*E - 3.0));
+    double sqrE = q;
+    return (1.0 / pow(1.0 - E, 5.0 / 2.0) * (3.0 * asin(sqrE) + sqrE * sqrt(1.0 - E) * (1.0 - 2.0 * E) * (8.0 * E * E - 8.0 * E - 3.0)));
 }
 
 //---------------------------------------------------------------------- //
@@ -72,44 +73,42 @@ void frm2com(double *Pos, double *Vel, double *Mass, const int N) {
 // Generate a Hernquist sphere of mass M and parametrized radius R.        //
 // rmax=5R, which is 94% of the total mass for the Hernquist distribution. //
 //---------------------------------------------------------------------- //
+
+double hernquist_density(double r, double M, double a) {
+    return (M * a) / (r * pow(r + a, 3));
+}
+
+
+// Generate a Hernquist sphere of mass M and parametrized radius R.
+// rmax = 5R, which is 94% of the total mass for the Hernquist distribution.
 void hernquist_dist(double *Pos, double *Vel, double *Mass, const int N, const double R, const double M, const double seed) {
     srand(seed);
     double X1, X2, X3;
     double r, Ve;
-    double m = 1.0/N;
-    double dm = m*M;
-    double cum_mass_min = 0.0;
-    double cum_mass_max = m;
+    double m = 1.0 / N;
+    double dm = m * M;
     int ii;
     for (ii = 0; ii < N; ii++) {
         Mass[ii] = dm;
-        // Position
-
+    
+        // Position: Acceptance-Rejection Method
         do {
-            do {
-                X1 = rndm(cum_mass_min, cum_mass_max);
-                cum_mass_min = cum_mass_max;
-                cum_mass_max += m;
-                X1 = RAND();
-            } while (X1 < 1.0e-10);
-            r = sqrt(X1)/(1-sqrt(X1));
-        } while (r > 5);
-
-        r *=R;
-        spher2cartes(Pos + 3*ii, r);
+            X1 = RAND();
+            X2 = RAND();
+            r = R * pow(X1, 1.0 / 3.0) / (1.0 - pow(X1, 1.0 / 3.0));  // Transformation inverse
+        } while (X2 > hernquist_density(r, M, R) );  // Acceptance criterion
+        spher2cartes(Pos + 3 * ii, r);
 
         // Velocity
-        X2   = RAND();
-        X3   = RAND();
-        while (0.1*X3 < g(X2)) {
+        do {
             X2 = RAND();
             X3 = RAND();
-        } 
+        } while (X3 > g(X2));
 
-        Ve = (sqrt2*sqrt(M/R) / sqrt(1.0 + r)) * X1;
-        spher2cartes(Vel + 3*ii, Ve);
+        //q = sqrt(-r * G * M / (r + R));
+        Ve =  sqrt2*sqrt(M/R)* sqrt(1.0 / (1.0 +  r));
+        spher2cartes(Vel + 3 * ii, Ve);
     }
 
     frm2com(Pos, Vel, Mass, N);
-
 }
