@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <mpi.h>
+
 #define G 1.0
 #define M_c 1.0         // Mass central body
 #define Q 1.5           // Toomre Parameter
@@ -18,30 +19,11 @@ double rand_normal(double mean, double stddev) {
 }
 
 double kuzmin_velocity(double r) {
-    return sqrt( (G * M_c * r * r) / pow(r * r + 1, 3.0 / 2.0) );
-}
-
-double epicyclic_frequency(double r) {
-    return sqrt(2) * kuzmin_velocity(r) / r;
+    return sqrt( (G * M_c * r * r) * pow(r * r + 1.0, - 3.0 / 2.0) );
 }
 
 double surface_density(double r) {
     return (M_c / (2 * M_PI)) * pow(1 + r * r, -1.5);
-}
-
-double radial_velocity_dispersion(double r) {
-    double kappa = epicyclic_frequency(r);
-    double sigma = surface_density(r);
-    return (Q * 3.36 * G * sigma) / kappa;
-}
-
-double tangential_velocity_dispersion(double r) {
-    double sigma = surface_density(r);
-    return (3.36 * G * sigma) / ( 2/sqrt(2) * epicyclic_frequency(r));
-}
-
-double vertical_velocity_dispersion(double r) {
-    return 0.5 * tangential_velocity_dispersion(r);
 }
 
 void frm2com(double *Pos, double *Vel, double *Mass, const int N) {
@@ -85,26 +67,22 @@ double sample_kuzmin_radius(double R) {
     return r;
 }
 
-
 void kuzmin_disk(double *Pos, double *Vel, double *Mass, const int N, const double R, const double M, const double seed) {
     srand(seed);
-    double r, theta, sigma_rad, sigma_tan, sigma_z;
+    double r, theta;
 
     for (int ii = 0; ii < N; ii++) {
-        theta = rand_uniform(0, 2 * M_PI);
+        theta = rand_uniform(0, 2.0 * M_PI);
         r = sample_kuzmin_radius(R); // Use inverse CDF sampling for radius
 
         Pos[3 * ii] = r * cos(theta);
         Pos[3 * ii + 1] = r * sin(theta);
         Pos[3 * ii + 2] = 0.0;
 
-        sigma_rad = radial_velocity_dispersion(r);
-        sigma_tan = tangential_velocity_dispersion(r);
-        sigma_z   = vertical_velocity_dispersion(r);
 
-        double vr = rand_normal(0, sigma_rad);
-        double vtheta = rand_normal(kuzmin_velocity(r), sigma_tan);
-        double vz = rand_normal(0, sigma_z);
+        double vr = 0.0;
+        double vtheta = rand_uniform(0, kuzmin_velocity(r));
+        double vz = rand_uniform(-0.001, 0.001);
 
         Vel[3 * ii] = vr * cos(theta) - vtheta * sin(theta);
         Vel[3 * ii + 1] = vr * sin(theta) + vtheta * cos(theta);
