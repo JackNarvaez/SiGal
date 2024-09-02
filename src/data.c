@@ -1,24 +1,34 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h> 
 
-void read_parameters(const char *File_address, double prmts[])
+#define SETUP_NAME_SIZE 32  
+
+void read_parameters(const char *File_address, double prmts[], char *setup)
 {
     FILE *File;
-    File = fopen(File_address, "r");
+    File = fopen(File_address, "r"); 
     char line[256];
     int row = 0;
-    while (fgets(line, sizeof(line), File)) {
-        if (line[0] == '\n' || line[0] == '#')
+    while (fgets(line, sizeof(line), File)) {  
+        if (line[0] == '\n' || line[0] == '#')  
             continue;
-        else {
-            char *token;
-            token = strtok(line, "\t");
-            prmts[row] = atof(token);
+        
+        char *token = strtok(line, "\t ");  
+        if (row < 6 && token != NULL) {  
+            prmts[row] = atof(token);  
             row += 1;
+        } else if (token != NULL) { 
+            // Copy the setup name into the setup variable
+            strncpy(setup, token, SETUP_NAME_SIZE - 1);
+            setup[SETUP_NAME_SIZE - 1] = '\0'; 
+            for (int i = strlen(setup) - 1; i >= 0 && isspace(setup[i]); i--) {
+                setup[i] = '\0';
+            }
         }
     }
-    fclose(File);
+    fclose(File); 
 }
 
 void read_data(const char *File_address, double *Pos, double *Vel, double *Mass) {
