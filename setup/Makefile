@@ -1,8 +1,8 @@
 CC=mpic++
 CFLAGS=-Wall -Werror
 COPTS=-O0
-DEPS=hernquist.h ../src/structures.h ../src/data.h
-SRC=main.c hernquist.c ../src/data.c
+DEPS = ../src/structures.h ../src/data.h utils.h plummer.h hernquist.h exponential.h kepler.h Kuzmin.h merger.h
+SRC=main.c ../src/data.c utils.c plummer.c hernquist.c exponential.c kepler.c Kuzmin.c merger.c
 OBJ=${SRC:.c=.o}
 
 %.o: %.c $(DEPS)
