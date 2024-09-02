@@ -2,18 +2,13 @@
 #include <stdlib.h>
 #include <math.h>
 #include <mpi.h>
+#include "utils.h"
 
 #define G 1.0     
 #define M_central 1.0
 #define RAND() ((double)rand()/(double)(RAND_MAX))
 
-//---------------------------------------------------------------------- //
-// Generate a random number in [min, max] with uniform distribution.     //
-//---------------------------------------------------------------------- //
-double rndm(double min, double max) {
-    return min + (max-min)*RAND();
-}
- 
+
 double keplerian_velocity(double r) {
     return sqrt(G * M_central / r);
 }
@@ -38,36 +33,7 @@ void cilin2cartes(double r, double theta, double v, double *Pos, double *Vel) {
     Vel[2] = 1e-3*rndm(0.1,0.2);                                           // vz
 }
 
-//---------------------------------------------------------------------- //
-// Convert to the CoM reference frame                                    //
-//---------------------------------------------------------------------- //
-void frm2com(double *Pos, double *Vel, double *Mass, const int N) {
-    double x_com    = 0.0;
-    double y_com    = 0.0;
-    double z_com    = 0.0;
-    double vx_com   = 0.0;
-    double vy_com   = 0.0;
-    double vz_com   = 0.0;
-    int ii;
-    for (ii=0; ii<N; ii++) {
-        x_com   += Mass[ii]*Pos[3*ii];
-        y_com   += Mass[ii]*Pos[3*ii+1];
-        z_com   += Mass[ii]*Pos[3*ii+2];
-        vx_com  += Mass[ii]*Vel[3*ii];
-        vy_com  += Mass[ii]*Vel[3*ii+1];
-        vz_com  += Mass[ii]*Vel[3*ii+2];
-    }
-    for (ii=0; ii<N; ii++) {
-        Pos[3*ii]   -= x_com;
-        Pos[3*ii+1] -= y_com;
-        Pos[3*ii+2] -= z_com;
-        Vel[3*ii]   -= vx_com;
-        Vel[3*ii+1] -= vy_com;
-        Vel[3*ii+2] -= vz_com;
-    }
-}
-
-//---------------------------------------------------------------------- //
+//------------------------------------------------------------------- //
 // Generate a uniform keplerian disk sphere of mass M and parametrized radius R.        //
 //---------------------------------------------------------------------- //
 void keplerian_disk(double *Pos, double *Vel, double *Mass, const int N, const double R, const double M, const double seed) {
