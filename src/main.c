@@ -13,14 +13,19 @@ The N-Body problem using MPI
 #include "data.h"
 #include "parallel.h"
 
+#define SETUP_NAME_SIZE 32
+
+
 int main(int argc, char** argv) {
     int pId;                        // Process rank
     int nP;                         // Number of processes
     int tag{0};                     // Tag message
     int root{0};                    // Root process
     double prmts[6];
+    char setup_name[SETUP_NAME_SIZE];  // Buffer para almacenar el nombre del setup
 
-    read_parameters("./input", prmts);
+
+    read_parameters("./input", prmts, setup_name);
     
     int N     = (int) prmts[0];     // Total number of bodies
     double R  = prmts[2];           // Radius

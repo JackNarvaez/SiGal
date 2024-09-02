@@ -9,7 +9,7 @@
 
 // Global Constants
 const double G      = 1.0;
-const double EPSG   = 0.0001;
+const double EPSG   = 0.025;
 const double EPSG2  = EPSG*EPSG;
 const double THETA  = 0.5;
 const double THETA2 = THETA*THETA;
@@ -48,7 +48,7 @@ void Forcei(double* Acc, const double* Pos, Node* node)
     dx  = node->CoM[0] - Pos[0];
     dy  = node->CoM[1] - Pos[1];
     dz  = node->CoM[2] - Pos[2];
-    dq2 = dx*dx + dy*dy + dz*dz + EPSG2; 
+    dq2 = dx*dx + dy*dy + dz*dz + EPSG2;
     inv_rtd2 = 1./sqrt(dq2);
     cb_d2 = inv_rtd2*inv_rtd2*inv_rtd2;
     F = G* *node->Mass*cb_d2;
