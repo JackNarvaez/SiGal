@@ -15,7 +15,7 @@ def read_parameters(prmts):
     4       # steps: Evolution steps
     5       # jump: Data storage interval
     ------------------------------------------------------------------------"""
-    data = loadtxt("../input")
+    data = loadtxt("../input", max_rows=6)
     return data[prmts]
 
 def read_data(file_path, N, coords):
