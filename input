@@ -1,7 +1,7 @@
 1000    # Nb: Number of bodies in the galaxy
 1.0     # M : Mass of Galaxy
 1.0     # r : Radius of Galaxy
-0.001   # dt: Time step
-4800    # steps: Evolution steps
+0.0001   # dt: Time step
+5000    # steps: Evolution steps
 100     # jump: Data storage interval
-MERGER  # Setup: PLUMMER, HERNQUIST, EXPONENTIAL, KEPLER, KUZMIN
+KUZMIN_HOT  # Setup: PLUMMER, HERNQUIST, EXPONENTIAL, KEPLER, KUZMIN, KUZMIN_HOT
