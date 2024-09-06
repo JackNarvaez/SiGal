@@ -1,9 +1,10 @@
 #ifndef EXPONENTIAL_H_
 #define EXPONENTIAL_H_
 
-double exponential_velocity(double);
-void exponential_disk(double *, double *, double *, const int, const double, const double, const double);
-double sample_exponential_radius(double );
-double surface_density_exponential(double);
+double cum_mass_exp(double);
+double rotational_velocity_exp(double, double);
+double surface_density_exp(double, double);
+double f_root_exp(double, double);
+void exponential_disk(double *, double *, double *, const int, const int, const double, const double);
 
 #endif // EXPONENTIAL_H_

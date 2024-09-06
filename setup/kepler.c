@@ -1,54 +1,35 @@
-#include <stdio.h>
-#include <stdlib.h>
+// --------------------------------------------------------------- //
+// The Kepler’s disk with a massive central object.                //
+// --------------------------------------------------------------- //
+
 #include <math.h>
-#include <mpi.h>
 #include "utils.h"
-
-#define G 1.0     
-#define M_central 1.0
-#define RAND() ((double)rand()/(double)(RAND_MAX))
-
-
-double keplerian_velocity(double r) {
-    return sqrt(G * M_central / r);
+   
+double keplerian_velocity(double r, double M) {
+    return sqrt(M / r);
 }
 
-//---------------------------------------------------------------------- //
-// Probability distribution of velocity.                                 //
-//---------------------------------------------------------------------- //
-double uniform(double r_max) {
-    return r_max * sqrt(rndm(0.0, 1.0));
-}
-
-//---------------------------------------------------------------------- //
-// Assign vel ond pos with magnitude 'r' a random direction.                //
-//---------------------------------------------------------------------- //
-void cilin2cartes(double r, double theta, double v, double *Pos, double *Vel) {
-    Pos[0] = r * cos(theta);      // x
-    Pos[1] = r * sin(theta);      // y
-    Pos[2] = 1e-3*rndm(0.1,0.2);                 // z;
-
-    Vel[0] = -v * sin(theta) + 0.01 * v * (RAND() - 0.5);   // vx with dispersion
-    Vel[1] = v * cos(theta) + 0.01 * v * (RAND() - 0.5);    // vy with dispersion
-    Vel[2] = 1e-3*rndm(0.1,0.2);                                           // vz
-}
-
-//------------------------------------------------------------------- //
-// Generate a uniform keplerian disk sphere of mass M and parametrized radius R.        //
-//---------------------------------------------------------------------- //
-void keplerian_disk(double *Pos, double *Vel, double *Mass, const int N, const double R, const double M, const double seed) {
-    srand(seed);
-    double m = M / N;
-    double r_max = R;
+void keplerian_disk(double *Pos, double *Vel, double *Mass, const int Nl, const int N, const double R, const double M) {
+    double r, phi, th, z, vtan;
+    double Md = 0.1*M;
+    double dm = Md / N;
     int ii;
-    for (ii = 0; ii < N; ii++) {
-        Mass[ii] = m;
-
-        double r = uniform(r_max);
-        double theta = rndm(0, 2.0 * M_PI);
-        double v = keplerian_velocity(r);
-        cilin2cartes(r, theta, v, Pos + 3*ii, Vel + 3*ii);
+    for (ii = 0; ii < Nl; ii++) {
+        Mass[ii]    = dm;
+        r   = R*sqrt(rndm(0.005, 1.0));
+        do {
+            z   = rand_normal(0, 1);
+        } while (fabs(z)>0.01*R);
+        phi = rndm(0, 2*M_PI);
+        Pos[3*ii]   = r * cos(phi);
+        Pos[3*ii+1] = r * sin(phi);
+        Pos[3*ii+2] = z;
+        r   = sqrt(r*r + z*z);
+        th  = atan2(r, z);
+        vtan= keplerian_velocity(r, M);
+        Vel[3*ii]   =   -vtan*sin(th)*sin(phi);
+        Vel[3*ii+1] =   vtan*sin(th)*cos(phi);
+        Vel[3*ii+2] =   vtan*cos(th);
     }
-    frm2com(Pos, Vel, Mass, N);
-
+    frm2com(Pos, Vel, Mass, Nl);
 }

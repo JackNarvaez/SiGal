@@ -1,5 +1,6 @@
 CC=mpic++
 CFLAGS=-Wall -Werror
+CFLAGSPROF=-g -pg -Wall -Werror
 COPTS=-O3
 DEPS=nbodies.h structures.h tree.h data.h parallel.h
 SRC=main.c nbodies.c tree.c data.c parallel.c

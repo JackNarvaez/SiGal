@@ -9,8 +9,10 @@
 #include "hernquist.h"     
 #include "exponential.h"  
 #include "kepler.h"       
-#include "Kuzmin.h"
+#include "kuzmin.h"
+#include "miyamoto.h"
 #include "merger.h"
+#include "mwg1.h"
 
 #define SETUP_NAME_SIZE 32
 
@@ -21,10 +23,8 @@ int main(int argc, char** argv) {
     double prmts[7];
     char setup_name[SETUP_NAME_SIZE];  //buffer for setup name
 
-
-    // Leer parámetros de entrada
+    // Read input parameters
     read_parameters("./input", prmts, setup_name);
-    
 
     int N     = (int) prmts[0];     // Total number of bodies
     double M  = prmts[1];           // Total Mass of Galaxy
@@ -32,11 +32,12 @@ int main(int argc, char** argv) {
     int root{0};                    // Root process
     int seed  = 1234;
 
-
     // Inicializar MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &nP);
     MPI_Comm_rank(MPI_COMM_WORLD, &pId);
+
+    srand(seed+pId);
     
     // Length of each proccess
     int len[nP], counts[nP], displacements3[nP], displacements1[nP];
@@ -54,7 +55,7 @@ int main(int argc, char** argv) {
         displacements3[ii] = displacements3[ii - 1] + counts[ii - 1];
     }
 
-    body bd;  
+    body bd;
 
     // Allocate memory for each process
     bd.r = (double *)malloc(3 * len[pId] * sizeof(double));  // [x, y, z]
@@ -62,43 +63,47 @@ int main(int argc, char** argv) {
     bd.m = (double *)malloc(len[pId] * sizeof(double));      // [m]
 
     body GlobBds;
+    
     if (pId == root) {
-        GlobBds.r = (double *)malloc(3 * N * sizeof(double));  // [x, y, z]
-        GlobBds.v = (double *)malloc(3 * N * sizeof(double));  // [vx, vy, vz]
-        GlobBds.m = (double *)malloc(N * sizeof(double));      // [m]
-
-    // Initialize the specific setup based on the setup name    
-        if (strcmp(setup_name, "PLUMMER") == 0) {
-            plummer_dist(GlobBds.r, GlobBds.v, GlobBds.m, N, R, M, seed);
-        } else if (strcmp(setup_name, "HERNQUIST") == 0) {
-            hernquist_dist(GlobBds.r, GlobBds.v, GlobBds.m, N, R, M, seed);
-        } else if (strcmp(setup_name, "EXPONENTIAL") == 0) {
-            exponential_disk(GlobBds.r, GlobBds.v, GlobBds.m, N, R, M, seed);
-        } else if (strcmp(setup_name, "KEPLER") == 0) {
-            keplerian_disk(GlobBds.r, GlobBds.v, GlobBds.m, N, R, M, seed);
-        } else if (strcmp(setup_name, "KUZMIN") == 0) {
-            kuzmin_disk(GlobBds.r, GlobBds.v, GlobBds.m, N, R, M, seed);
-        } else if (strcmp(setup_name, "MERGER") == 0) {
-            galaxy_collision(GlobBds.r, GlobBds.v, GlobBds.m, N, R, M, seed);
-        }// else if (strcmp(setup_name, "MIYAMOTO") == 0) {
-           // miyamoto_nagai_disk(GlobBds.r, GlobBds.v, GlobBds.m, N, R, M, seed);
-        //} */
-        else {
-            fprintf(stderr, "Unknown setup: %s\n", setup_name);
-            MPI_Finalize();
-            return 1;
-        }
+        GlobBds.r = (double *) malloc(3*N*sizeof(double));        // [x, y, z]
+        GlobBds.v = (double *) malloc(3*N*sizeof(double));        // [vx, vy, vz]
+        GlobBds.m = (double *) malloc(N*sizeof(double));          // [m]
+    } else {
+        GlobBds.r = NULL;
+        GlobBds.v = NULL;
+        GlobBds.m = NULL;
     }
 
-    // Distribute initialized data to all processes
-    MPI_Scatterv(GlobBds.r, counts, displacements3, MPI_DOUBLE, bd.r, 3 * len[pId], MPI_DOUBLE, root, MPI_COMM_WORLD);
-    MPI_Scatterv(GlobBds.v, counts, displacements3, MPI_DOUBLE, bd.v, 3 * len[pId], MPI_DOUBLE, root, MPI_COMM_WORLD);
-    MPI_Scatterv(GlobBds.m, len, displacements1, MPI_DOUBLE, bd.m, len[pId], MPI_DOUBLE, root, MPI_COMM_WORLD);
-
-
+    // Initialize the specific setup based on the setup name    
+    if (strcmp(setup_name, "PLUMMER") == 0) {
+        plummer_dist(bd.r, bd.v, bd.m, len[pId], N, R, M);
+    } else if (strcmp(setup_name, "HERNQUIST") == 0) {
+        hernquist_dist(bd.r, bd.v, bd.m, len[pId], N, R, M);
+    } else if (strcmp(setup_name, "EXPONENTIAL") == 0) {
+        exponential_disk(bd.r, bd.v, bd.m, len[pId], N, R, M);
+    } else if (strcmp(setup_name, "KEPLER") == 0) {
+        keplerian_disk(bd.r, bd.v, bd.m, len[pId], N, R, M);
+        if (pId==root) {
+            bd.m[0] = M;
+            bd.r[0] = 0.0; bd.r[1] = 0.0; bd.r[2] = 0.0;
+            bd.v[0] = 0.0; bd.v[1] = 0.0; bd.v[2] = 0.0;
+        }
+    } else if (strcmp(setup_name, "KUZMIN") == 0) {
+        kuzmin_disk(bd.r, bd.v, bd.m, len[pId], N, R, M);
+    } else if (strcmp(setup_name, "MIYAMOTO") == 0) {
+        miyamoto_disk(bd.r, bd.v, bd.m, len[pId], N, R, M);
+    }else if (strcmp(setup_name, "MERGER") == 0) {
+        galaxy_collision(bd.r, bd.v, bd.m, len[pId], N, R, M);
+    }else if (strcmp(setup_name, "MWG1") == 0) {
+        mwg1(bd.r, bd.v, bd.m, len[pId], N, R, M);
+    }else {
+        fprintf(stderr, "Unknown setup: %s\n", setup_name);
+        MPI_Finalize();
+        return 1;
+    }
     // Collect processed data at the root process
-    MPI_Gatherv(bd.r, 3 * len[pId], MPI_DOUBLE, GlobBds.r, counts, displacements3, MPI_DOUBLE, root, MPI_COMM_WORLD);
-    MPI_Gatherv(bd.v, 3 * len[pId], MPI_DOUBLE, GlobBds.v, counts, displacements3, MPI_DOUBLE, root, MPI_COMM_WORLD);
+    MPI_Gatherv(bd.r, 3*len[pId], MPI_DOUBLE, GlobBds.r, counts, displacements3, MPI_DOUBLE, root, MPI_COMM_WORLD);
+    MPI_Gatherv(bd.v, 3*len[pId], MPI_DOUBLE, GlobBds.v, counts, displacements3, MPI_DOUBLE, root, MPI_COMM_WORLD);
     MPI_Gatherv(bd.m, len[pId], MPI_DOUBLE, GlobBds.m, len, displacements1, MPI_DOUBLE, root, MPI_COMM_WORLD);
 
     // Save data at the root process

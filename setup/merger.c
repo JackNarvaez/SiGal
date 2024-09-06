@@ -1,23 +1,10 @@
-#include <mpi.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <math.h>
 #include "utils.h"
 #include "plummer.h"
-#include "Kuzmin.h"
-
-
-#define G 1.0
-#define M_c 1.0         // Mass central body for Kuzmin galaxy
-#define Q 1.5           // Toomre Parameter for Kuzmin galaxy
-#define TPI (2*M_PI)
-#define RAND() ((double)rand()/(double)(RAND_MAX))
-
+#include "kuzmin.h"
 
 // Function to simulate the galaxy collision setup
-void galaxy_collision(double *Pos, double *Vel, double *Mass, const int N,const double R, const double M, const double seed) {
-    srand(seed);
-
+void galaxy_collision(double *Pos, double *Vel, double *Mass, const int Nl, const int N,const double R, const double M) {
     // Parameters for the collision setup
     const int N_kuzmin = N - 200;
     const int N_plummer = N - 800;
@@ -32,11 +19,11 @@ void galaxy_collision(double *Pos, double *Vel, double *Mass, const int N,const 
 
     
     // Initialize Kuzmin disk
-    kuzmin_disk(Pos, Vel, Mass, N_kuzmin, R_kuzmin, M_kuzmin, seed);
+    kuzmin_disk(Pos, Vel, Mass, N_kuzmin, N_kuzmin, R_kuzmin, M_kuzmin);
 
     // Initialize Plummer sphere
-    plummer_dist(Pos + 3 * N_kuzmin, Vel + 3 * N_kuzmin, Mass + N_kuzmin, N_plummer, R_plummer, M_plummer, seed);
-
+    plummer_dist(Pos + 3 * N_kuzmin, Vel + 3 * N_kuzmin, Mass + N_kuzmin, N_plummer, N_plummer, R_plummer, M_plummer);
+    
     // Adjust Plummer galaxy to initial collision conditions
     for (int ii = 0; ii < N_plummer; ii++) {
         Pos[3 * (N_kuzmin + ii)]     += d_x;  // shift in x

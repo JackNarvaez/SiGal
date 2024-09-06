@@ -1,4 +1,5 @@
 #include <mpi.h>
+#include <algorithm>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -9,9 +10,9 @@
 
 // Global Constants
 const double G      = 1.0;
-const double EPSG   = 0.025;
+const double EPSG   = 0.0001;
 const double EPSG2  = EPSG*EPSG;
-const double THETA  = 0.5;
+const double THETA  = 0.75;
 const double THETA2 = THETA*THETA;
 
 // PEFRL Parameters
@@ -32,13 +33,12 @@ bool FarDistance(const double* Pos, const Node* node)
     double d2   = xrel * xrel + yrel * yrel + zrel * zrel;
 
     // Find the longest side of the node
-    double side = node->max[0] - node->min[0];
-    if (node->max[1] - node->min[1] > side) side = node->max[1] - node->min[1];
-    if (node->max[2] - node->min[2] > side) side = node->max[2] - node->min[2];
+    double dx = node->max[0] - node->min[0];
+    double dy = node->max[1] - node->min[1];
+    double dz = node->max[2] - node->min[2];
+    double side = std::max({dx, dy, dz});
 
-    bool cond = (side*side / d2) < THETA2;
-
-    return cond;
+    return side*side < THETA2*d2;
 }
 
 // Compute gravitation force for Body(Pos) due to Node
@@ -65,6 +65,10 @@ void GravitationalAccTree(Node* root, const double* Pos, double* Acc, const int 
         Node* node = root;
         Node* lastVisited = NULL;  // Last visited node
 
+        // Store positions and acceleration pointers
+        double * acc = &Acc[3 * ii];
+        const double * pos = &Pos[3 * ii];
+
         while (node != NULL) {
             if (node == root && lastVisited != NULL) {
                 break; 
@@ -72,7 +76,7 @@ void GravitationalAccTree(Node* root, const double* Pos, double* Acc, const int 
             //Leaf Node
             if (node->type) {
                 if (*node->Mass > 0) {     // Not empty leaf
-                    Forcei(&Acc[3*ii], &Pos[3*ii], node);
+                    Forcei(acc, pos, node);
                 }
             lastVisited = node;  
             node = node->next;         // Move to sibling or parent node
@@ -83,8 +87,8 @@ void GravitationalAccTree(Node* root, const double* Pos, double* Acc, const int 
                     lastVisited = node;    // Last visited is the sibling (down to up)
                     node = node->next;
                 } else {
-                    if (FarDistance(&Pos[3*ii], node)) {
-                        Forcei(&Acc[3*ii], &Pos[3*ii], node); 
+                    if (FarDistance(pos, node)) {
+                        Forcei(acc, pos, node); 
                         lastVisited = node;  
                         node = node->next;
                     }else {
@@ -123,14 +127,14 @@ void Acceleration(Node* Tree, const double* Pos, double* Acc, const int* len, co
   
     /*The Ring Loop*/
     int dst = (pId+1)%nP;
-    int scr = (pId-1+nP)%nP;
-  
-    for (jj=0; jj<nP; jj++){
-        MPI_Sendrecv_replace(BufferPos, 3*max, MPI_DOUBLE, dst, tag, scr, tag, MPI_COMM_WORLD, &status);
-        MPI_Sendrecv_replace(Acc, 3*max, MPI_DOUBLE, dst, tag, scr, tag, MPI_COMM_WORLD, &status);
-        GravitationalAccTree(Tree, BufferPos, Acc, len[(scr-jj+nP)%nP]);
-    }
+    int src = (pId-1+nP)%nP;
 
+    for (jj=0; jj<nP; jj++){
+        MPI_Sendrecv_replace(BufferPos, 3*max, MPI_DOUBLE, dst, tag, src, tag, MPI_COMM_WORLD, &status);
+        MPI_Sendrecv_replace(Acc, 3*max, MPI_DOUBLE, dst, tag, src, tag, MPI_COMM_WORLD, &status);
+        GravitationalAccTree(Tree, BufferPos, Acc, len[(src-jj+nP)%nP]);
+    }
+    
     free(BufferPos);
 }
 

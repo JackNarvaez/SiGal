@@ -3,6 +3,6 @@
 
 double hernquist_density(double , double , double );
 double h_g(double);
-void hernquist_dist(double *, double *, double *, const int, const double, const double, const double);
+void hernquist_dist(double *, double *, double *, const int, const int, const double, const double);
 
 #endif // HERNQUIST_H_
