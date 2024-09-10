@@ -4,7 +4,6 @@
 #include <math.h>
 #include "utils.h"
 
-const double TPI        = 2*M_PI;
 const double sqrt2      = sqrt(2.);
 
 //---------------------------------------------------------------------- //

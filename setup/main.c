@@ -7,6 +7,7 @@
 #include "utils.h"  
 #include "plummer.h"       
 #include "hernquist.h"     
+#include "isothermal.h"     
 #include "exponential.h"  
 #include "kepler.h"       
 #include "kuzmin.h"
@@ -82,6 +83,8 @@ int main(int argc, char** argv) {
         plummer_dist(bd.r, bd.v, bd.m, bd.i, len[pId], N, R, M, 0);
     } else if (strcmp(setup_name, "HERNQUIST") == 0) {
         hernquist_dist(bd.r, bd.v, bd.m, bd.i, len[pId], N, R, M, 0);
+    } else if (strcmp(setup_name, "ISOTHERMAL") == 0) {
+        isothermal_dist(bd.r, bd.v, bd.m, bd.i, len[pId], N, R, M, 0);
     } else if (strcmp(setup_name, "EXPONENTIAL") == 0) {
         exponential_disk(bd.r, bd.v, bd.m, bd.i, len[pId], N, R, M, 0);
     } else if (strcmp(setup_name, "KEPLER") == 0) {
