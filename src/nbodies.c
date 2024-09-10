@@ -138,7 +138,7 @@ void Acceleration(Node* Tree, const double* Pos, double* Acc, const int* len, co
     free(BufferPos);
 }
 
-void Save_data(const double *Pos, const double *Vec, const double *Mass, const int N, const int it)
+void Save_data(const double *Pos, const double *Vec, const double *Mass, const int *i, const int N, const int it)
 {
     /*---------------------------------------------------------------------------
     Saves positions, velocities, and masses of all bodies in Evolution.
@@ -158,6 +158,7 @@ void Save_data(const double *Pos, const double *Vec, const double *Mass, const i
     fwrite(Pos, sizeof(double), 3 * N, File);
     fwrite(Vec, sizeof(double), 3 * N, File);
     fwrite(Mass, sizeof(double), N, File);
+    fwrite(i, sizeof(int), N, File);
 
     // Close the file
     fclose(File);
@@ -222,18 +223,19 @@ void Evolution(body* bd, body* GlobBds, double* rootmin, double* rootmax, Node *
     /*---------------------------------------------------------------------------
     Evolution of the system of bodies under gravitational interactions.
     ---------------------------------------------------------------------------*/
-    if (pId==root) Save_data(GlobBds->r, GlobBds->v, GlobBds->m, N, 0);
+    if (pId==root) Save_data(GlobBds->r, GlobBds->v, GlobBds->m, GlobBds->i, N, 0);
     int ii;
     for (ii = 1; ii < steps+1; ii++){    
         PEFRL(bd->r, bd->v, bd->m, bd->a, rootmin, rootmax, Tree, dt, N, len, tag, pId, nP, root, status);
         MPI_Gatherv(bd->r, 3*len[pId], MPI_DOUBLE, GlobBds->r, counts, displacements3, MPI_DOUBLE, root, MPI_COMM_WORLD);
         MPI_Gatherv(bd->v, 3*len[pId], MPI_DOUBLE, GlobBds->v, counts, displacements3, MPI_DOUBLE, root, MPI_COMM_WORLD);
         MPI_Gatherv(bd->m, len[pId], MPI_DOUBLE, GlobBds->m, len, displacements1, MPI_DOUBLE, root, MPI_COMM_WORLD);
+        MPI_Gatherv(bd->i, len[pId], MPI_INT, GlobBds->i, len, displacements1, MPI_INT, root, MPI_COMM_WORLD);
         GlobalDistri(bd, GlobBds, rootmin, rootmax, len, counts, displacements1, displacements3, GlobMin, GlobMax, R, N, nP, pId, root, maxdeep);
         if (pId==root) {
             if ( ii%jump == 0) {
                 printf("It: %d\t t: %.4f\t dt: %.4f\n", ii, ii*dt, dt);
-                Save_data(GlobBds->r, GlobBds->v, GlobBds->m, N, ii/jump);
+                Save_data(GlobBds->r, GlobBds->v, GlobBds->m, GlobBds->i, N, ii/jump);
             }
         }
     }

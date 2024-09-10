@@ -61,6 +61,7 @@ int main(int argc, char** argv) {
     bd.r = (double *)malloc(3 * len[pId] * sizeof(double));  // [x, y, z]
     bd.v = (double *)malloc(3 * len[pId] * sizeof(double));  // [vx, vy, vz]
     bd.m = (double *)malloc(len[pId] * sizeof(double));      // [m]
+    bd.i = (int *)malloc(len[pId] * sizeof(int));      // [m]
 
     body GlobBds;
     
@@ -68,34 +69,36 @@ int main(int argc, char** argv) {
         GlobBds.r = (double *) malloc(3*N*sizeof(double));        // [x, y, z]
         GlobBds.v = (double *) malloc(3*N*sizeof(double));        // [vx, vy, vz]
         GlobBds.m = (double *) malloc(N*sizeof(double));          // [m]
+        GlobBds.i = (int *) malloc(N*sizeof(int));          // [m]
     } else {
         GlobBds.r = NULL;
         GlobBds.v = NULL;
         GlobBds.m = NULL;
+        GlobBds.i = NULL;
     }
 
     // Initialize the specific setup based on the setup name    
     if (strcmp(setup_name, "PLUMMER") == 0) {
-        plummer_dist(bd.r, bd.v, bd.m, len[pId], N, R, M);
+        plummer_dist(bd.r, bd.v, bd.m, bd.i, len[pId], N, R, M, 0);
     } else if (strcmp(setup_name, "HERNQUIST") == 0) {
-        hernquist_dist(bd.r, bd.v, bd.m, len[pId], N, R, M);
+        hernquist_dist(bd.r, bd.v, bd.m, bd.i, len[pId], N, R, M, 0);
     } else if (strcmp(setup_name, "EXPONENTIAL") == 0) {
-        exponential_disk(bd.r, bd.v, bd.m, len[pId], N, R, M);
+        exponential_disk(bd.r, bd.v, bd.m, bd.i, len[pId], N, R, M, 0);
     } else if (strcmp(setup_name, "KEPLER") == 0) {
-        keplerian_disk(bd.r, bd.v, bd.m, len[pId], N, R, M);
+        keplerian_disk(bd.r, bd.v, bd.m, bd.i, len[pId], N, R, M, 0);
         if (pId==root) {
             bd.m[0] = M;
             bd.r[0] = 0.0; bd.r[1] = 0.0; bd.r[2] = 0.0;
             bd.v[0] = 0.0; bd.v[1] = 0.0; bd.v[2] = 0.0;
         }
     } else if (strcmp(setup_name, "KUZMIN") == 0) {
-        kuzmin_disk(bd.r, bd.v, bd.m, len[pId], N, R, M);
+        kuzmin_disk(bd.r, bd.v, bd.m, bd.i, len[pId], N, R, M, 0);
     } else if (strcmp(setup_name, "MIYAMOTO") == 0) {
-        miyamoto_disk(bd.r, bd.v, bd.m, len[pId], N, R, M);
+        miyamoto_disk(bd.r, bd.v, bd.m, bd.i, len[pId], N, R, M, 0);
     }else if (strcmp(setup_name, "MERGER") == 0) {
-        galaxy_collision(bd.r, bd.v, bd.m, len[pId], N, R, M);
+        galaxy_collision(bd.r, bd.v, bd.m, bd.i, len[pId], N, R, M, 0);
     }else if (strcmp(setup_name, "MWG1") == 0) {
-        mwg1(bd.r, bd.v, bd.m, len[pId], N, R, M);
+        mwg1(bd.r, bd.v, bd.m, bd.i, len[pId], N, R, M, 0);
     }else {
         fprintf(stderr, "Unknown setup: %s\n", setup_name);
         MPI_Finalize();
@@ -105,14 +108,16 @@ int main(int argc, char** argv) {
     MPI_Gatherv(bd.r, 3*len[pId], MPI_DOUBLE, GlobBds.r, counts, displacements3, MPI_DOUBLE, root, MPI_COMM_WORLD);
     MPI_Gatherv(bd.v, 3*len[pId], MPI_DOUBLE, GlobBds.v, counts, displacements3, MPI_DOUBLE, root, MPI_COMM_WORLD);
     MPI_Gatherv(bd.m, len[pId], MPI_DOUBLE, GlobBds.m, len, displacements1, MPI_DOUBLE, root, MPI_COMM_WORLD);
+    MPI_Gatherv(bd.i, len[pId], MPI_INT, GlobBds.i, len, displacements1, MPI_INT, root, MPI_COMM_WORLD);
 
     // Save data at the root process
     if (pId == root) {
         char output[32] = "./Data/IniData.txt";
-        write_data(output, GlobBds.r, GlobBds.v, GlobBds.m, N);
+        write_data(output, GlobBds.r, GlobBds.v, GlobBds.m, GlobBds.i, N);
         free(GlobBds.r);
         free(GlobBds.v);
         free(GlobBds.m);
+        free(GlobBds.i);
     }
 
     // Finalize MPI
@@ -122,6 +127,7 @@ int main(int argc, char** argv) {
     free(bd.r);
     free(bd.v);
     free(bd.m);
+    free(bd.i);
 
     return 0;
 }

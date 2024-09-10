@@ -4,7 +4,7 @@
 #include "kuzmin.h"
 
 // Function to simulate the galaxy collision setup
-void galaxy_collision(double *Pos, double *Vel, double *Mass, const int Nl, const int N,const double R, const double M) {
+void galaxy_collision(double *Pos, double *Vel, double *Mass, int *i, const int Nl, const int N,const double R, const double M, const int I) {
     // Parameters for the collision setup
     const int N_kuzmin = N - 200;
     const int N_plummer = N - 800;
@@ -19,10 +19,10 @@ void galaxy_collision(double *Pos, double *Vel, double *Mass, const int Nl, cons
 
     
     // Initialize Kuzmin disk
-    kuzmin_disk(Pos, Vel, Mass, N_kuzmin, N_kuzmin, R_kuzmin, M_kuzmin);
+    kuzmin_disk(Pos, Vel, Mass, i, N_kuzmin, N_kuzmin, R_kuzmin, M_kuzmin, I);
 
     // Initialize Plummer sphere
-    plummer_dist(Pos + 3 * N_kuzmin, Vel + 3 * N_kuzmin, Mass + N_kuzmin, N_plummer, N_plummer, R_plummer, M_plummer);
+    plummer_dist(Pos + 3 * N_kuzmin, Vel + 3 * N_kuzmin, Mass + N_kuzmin, i + N_kuzmin, N_plummer, N_plummer, R_plummer, M_plummer, I+1);
     
     // Adjust Plummer galaxy to initial collision conditions
     for (int ii = 0; ii < N_plummer; ii++) {

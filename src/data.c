@@ -31,7 +31,7 @@ void read_parameters(const char *File_address, double prmts[], char *setup)
     fclose(File); 
 }
 
-void read_data(const char *File_address, double *Pos, double *Vel, double *Mass) {
+void read_data(const char *File_address, double *Pos, double *Vel, double *Mass, int *i) {
     /*---------------------------------------------------------------------------
     Reads data from bodies: position, velocity and mass.
     -----------------------------------------------------------------------------
@@ -62,13 +62,14 @@ void read_data(const char *File_address, double *Pos, double *Vel, double *Mass)
                 token = strtok(NULL, "\t");
             }
             Mass[row] = atof(token);
+            i[row] = atoi(token);
             row += 1;
         }
     }
     fclose(File);
 }
 
-void write_data(const char *File_address, double *Pos, double *Vel, double *Mass, int N) {
+void write_data(const char *File_address, double *Pos, double *Vel, double *Mass, int *i, int N) {
     /*---------------------------------------------------------------------------
     Writes data about bodies: position, velocity and mass.
     -----------------------------------------------------------------------------
@@ -85,7 +86,7 @@ void write_data(const char *File_address, double *Pos, double *Vel, double *Mass
     int ii;
     fprintf(File, "#\t%d\n", N);
     for (ii=0; ii<N; ii++) {
-        fprintf(File, "%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\n", Pos[3*ii], Pos[3*ii+1], Pos[3*ii+2], Vel[3*ii], Vel[3*ii+1], Vel[3*ii+2], Mass[ii]);
+        fprintf(File, "%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%lf\t%d\n", Pos[3*ii], Pos[3*ii+1], Pos[3*ii+2], Vel[3*ii], Vel[3*ii+1], Vel[3*ii+2], Mass[ii], i[ii]);
     }
     fclose(File);
 }

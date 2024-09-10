@@ -9,14 +9,15 @@ double keplerian_velocity(double r, double M) {
     return sqrt(M / r);
 }
 
-void keplerian_disk(double *Pos, double *Vel, double *Mass, const int Nl, const int N, const double R, const double M) {
+void keplerian_disk(double *Pos, double *Vel, double *Mass, int *i, const int Nl, const int N, const double R, const double M, const int I) {
     double r, phi, th, z, vtan;
     double Md = 0.1*M;
     double dm = Md / N;
     int ii;
     for (ii = 0; ii < Nl; ii++) {
-        Mass[ii]    = dm;
-        r   = R*sqrt(rndm(0.005, 1.0));
+        Mass[ii]= dm;
+        i[ii]   = I;
+        r   = R*sqrt(rndm(0.001, 1.0));
         do {
             z   = rand_normal(0, 1);
         } while (fabs(z)>0.01*R);

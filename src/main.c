@@ -50,11 +50,13 @@ int main(int argc, char** argv) {
     GlobBds.r = NULL;
     GlobBds.v = NULL;
     GlobBds.m = NULL;
+    GlobBds.i = NULL;
 
     bd.r = NULL;
     bd.v = NULL;
     bd.a = NULL;
     bd.m = NULL;
+    bd.i = NULL;
     
     double* GlobMin = NULL;
     double* GlobMax = NULL;
@@ -69,9 +71,10 @@ int main(int argc, char** argv) {
         GlobBds.r = (double *) malloc(3*N*sizeof(double));          // [x, y, z]
         GlobBds.v = (double *) malloc(3*N*sizeof(double));          // [vx, vy, vz]
         GlobBds.m = (double *) malloc(N*sizeof(double));            // [m]
+        GlobBds.i = (int *) malloc(N*sizeof(int));            // [m]
 
         char input[32] = "./Data/IniData.txt";
-        read_data(input, GlobBds.r, GlobBds.v, GlobBds.m);
+        read_data(input, GlobBds.r, GlobBds.v, GlobBds.m, GlobBds.i);
     }
 
     GlobalDistri(&bd, &GlobBds, rootmin, rootmax, len, counts, displacements1, displacements3, GlobMin, GlobMax, R, N, nP, pId, root, maxdeep);
@@ -87,6 +90,7 @@ int main(int argc, char** argv) {
         free(GlobBds.r);
         free(GlobBds.v);
         free(GlobBds.m);
+        free(GlobBds.i);
         free(GlobMin);
         free(GlobMax);
         double end = MPI_Wtime();
@@ -101,6 +105,7 @@ int main(int argc, char** argv) {
     free (bd.v);
     free (bd.a);
     free (bd.m);
+    free (bd.i);
     free (rootmax);
     free (rootmin);
 

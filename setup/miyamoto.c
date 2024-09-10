@@ -19,59 +19,49 @@ double density_miy(double R, double z, double M, double a, double b) {
     return (b*b*M/(4*M_PI))*f4;
 }
 
-void miyamoto_disk(double *Pos, double *Vel, double *Mass, const int Nl, const int N, const double R, const double M) {
-    double a = 1.0;
-    double b = 0.1;
-    double r, z, rho, phi, sigma_rad, sigma_tan, sigma_z;
-    double vx, vy, vz, v, sigma;
+void miyamoto_disk(double *Pos, double *Vel, double *Mass, int *i, const int Nl, const int N, const double R, const double M, const int I) {
+    double a = 1.0*R;
+    double b = 0.05*R;
+    double x, y, z, r, rho, phi, sigma_rad, sigma_z;
+    double vR, vx, vy, vz, S, Om;
     double X1;
     double dm = M/N;
     int ii;
+    double rho_max  = density_miy(a, 0, M, a, b);
+    double rho_0    = density_miy(0, 0, M, a, b);
     for (ii = 0; ii < Nl; ii++) {
         Mass[ii] = dm;
+        i[ii]    = I;
         // Position
         do {
-            r   = R*rndm(0.005, 1.0);
-            z   = 0.1*R*rndm(0.005, 1.0);
-            X1  = RAND();
-            rho = density_miy(r, z, M, a, b);
-        } while (X1 < rho);
+            x   = rndm(-a, a);
+            y   = rndm(-a, a);
+            z   = 0.0; 
+            X1  = sqrt(x*x+y*y);   
+            rho = rndm(rho_0, rho_max);
+        } while (rho < density_miy(X1, z, M, a, b) || X1 < 0.001*R);
 
-        phi = rndm(0, 2.0*M_PI);
-        Pos[3 * ii] = r*cos(phi);
-        Pos[3 * ii + 1] = r*sin(phi);
+        Pos[3 * ii] = x;
+        Pos[3 * ii + 1] = y;
         Pos[3 * ii + 2] = z;
 
-        r = sqrt(r*r+z*z);
+        vR = 0.1;              
+        sigma_rad = vR/10;
+        sigma_z = 0.01*sqrt(b*b*density_miy(a, 0, M, a, b));
+
+        vz  = rand_normal(0, sigma_z);
+        vR  = rand_normal(0, sigma_rad);
+    
+        phi = atan2(y, x);
+        vx  = vR*cos(phi);
+        vy  = vR*sin(phi);
         
-        /*
-          Warning!!!! 
-          Velocity profile is not stable yet.
-        */
-        v       = rotational_velocity_miy(r, z, M, a , b);
-        sigma   = density_miy(r, z, M, a , b);
+        r   = sqrt(x*x + y*y);    
+        S   = sqrt(r*r+pow(a+sqrt(z*z+b*b),2));
+        Om  = pow(S,-1.5);
 
-        vx  = -v*sin(phi);
-		vy  = v*cos(phi);
-		vz  = 0;
-
-        sigma_rad   = radial_velocity_dispersion(r, v, sigma);
-        sigma_tan   = tangential_velocity_dispersion(r, v, sigma);
-        sigma_z     = vertical_velocity_dispersion(r, v, sigma);
-
-		double sigmaRadX = sigma_rad * sin( phi );
-		double sigmaRadY = sigma_rad * cos( phi );
-
-        vx = rand_normal(vx, sigmaRadX);
-        vy = rand_normal(vy, sigmaRadY);
-
-		double sigmaTanX = sigma_tan * sin( phi );
-		double sigmaTanY = sigma_tan * cos( phi );
-
-		vx = rand_normal(vx, sigmaTanX);
-        vy = rand_normal(vy, sigmaTanY);
-
-		vz = rand_normal(vz, sigma_z);
+        vx += y*Om;
+        vy += -x*Om;
 
         Vel[3 * ii] = vx;
         Vel[3 * ii + 1] = vy;

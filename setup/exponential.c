@@ -24,20 +24,21 @@ double f_root_exp(double r, double x) {
     return x-cum_mass_exp(r);
 }
 
-void exponential_disk(double *Pos, double *Vel, double *Mass, const int Nl, const int N, const double M, const double R) {
+void exponential_disk(double *Pos, double *Vel, double *Mass, int *i, const int Nl, const int N, const double R, const double M, const int I) {
     double r, phi, sigma_rad, sigma_tan, sigma_z;
     double vx, vy, vz, v, sigma;
     double X1;
     double dm = M/N;
     int ii, a;
     for (ii = 0; ii < Nl; ii++) {
-        Mass[ii] = dm;
+        Mass[ii]= dm;
+        i[ii]   = I;
         // Position
         do {
             a   = 1;
             X1  = RAND();
             r   = ZerosBisection(X1, &a, f_root_exp);
-        } while (a==0 || r < 0.005*R || r > R);
+        } while (a==0 || r < 0.001*R || r > R);
 
         phi = rndm(0, 2*M_PI);
         Pos[3 * ii]     = r * cos(phi);

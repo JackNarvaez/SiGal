@@ -13,19 +13,20 @@ double surface_density_kuzmin(double r, double M) {
     return (M/(2*M_PI))*pow(1+r*r, -1.5);
 }
 
-void kuzmin_disk(double *Pos, double *Vel, double *Mass, const int Nl, const int N, const double R, const double M) {
+void kuzmin_disk(double *Pos, double *Vel, double *Mass, int *i, const int Nl, const int N, const double R, const double M, const int I) {
     double r, phi, sigma_rad, sigma_tan, sigma_z;
     double vx, vy, vz, v, sigma;
     double X1;
     double dm = M/N;
     int ii;
     for (ii = 0; ii < Nl; ii++) {
-        Mass[ii] = dm;
+        Mass[ii]= dm;
+        i[ii]   = I;
         // Position
         do {
             X1  = 1.- RAND();
             r   = sqrt(1./(X1*X1)-1.);
-        } while (r > R || r < 0.005*R);
+        } while (r<0.001*R || r>R);
 
         phi = rndm(0, 2.0*M_PI);
         Pos[3 * ii] = r*cos(phi);

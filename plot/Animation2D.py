@@ -55,7 +55,7 @@ fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
 # Plot 1
 message1 = ax1.text(0.0, 0.9, "", transform=ax1.transAxes)
 scatter1 = ax1.scatter(initial_x1, initial_y1, c='white', marker='.', s=1)
-boundaries = 7.0 * R
+boundaries = 2.0 * R
 
 if boundaries:
     ax1.set_xlim([-boundaries, boundaries])

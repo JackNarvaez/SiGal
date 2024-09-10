@@ -5,6 +5,6 @@ double cum_mass_exp(double);
 double rotational_velocity_exp(double, double);
 double surface_density_exp(double, double);
 double f_root_exp(double, double);
-void exponential_disk(double *, double *, double *, const int, const int, const double, const double);
+void exponential_disk(double *, double *, double *, int *, const int, const int, const double, const double, const int);
 
 #endif // EXPONENTIAL_H_

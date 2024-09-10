@@ -7,6 +7,7 @@ typedef struct {
     double *r;
     double *v;
     double *a;
+    int    *i;
 } body;
 
 typedef struct Node{
