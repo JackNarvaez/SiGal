@@ -20,12 +20,11 @@ double density_miy(double R, double z, double M, double a, double b) {
 }
 
 void miyamoto_disk(double *Pos, double *Vel, double *Mass, int *i, const int Nl, const int N, const double R, const double M, const int I) {
-    double a = 1.0*R;
-    double b = 0.05*R;
     double x, y, z, r, rho, phi, sigma_rad, sigma_z;
     double vR, vx, vy, vz, S, Om;
-    double X1;
-    double dm = M/N;
+    double dm   = M/N;
+    double a    = 1.0;
+    double b    = 0.05;
     int ii;
     double rho_max  = density_miy(a, 0, M, a, b);
     double rho_0    = density_miy(0, 0, M, a, b);
@@ -37,17 +36,17 @@ void miyamoto_disk(double *Pos, double *Vel, double *Mass, int *i, const int Nl,
             x   = rndm(-a, a);
             y   = rndm(-a, a);
             z   = 0.0; 
-            X1  = sqrt(x*x+y*y);   
+            r  = sqrt(x*x+y*y);   
             rho = rndm(rho_0, rho_max);
-        } while (rho < density_miy(X1, z, M, a, b) || X1 < 0.001*R);
+        } while (rho > density_miy(r, z, M, a, b) || r < 0.001*R);
 
-        Pos[3 * ii] = x;
-        Pos[3 * ii + 1] = y;
+        Pos[3 * ii] = x*R;
+        Pos[3 * ii + 1] = y*R;
         Pos[3 * ii + 2] = z;
 
         vR = 0.1;              
         sigma_rad = vR/10;
-        sigma_z = 0.01*sqrt(b*b*density_miy(a, 0, M, a, b));
+        sigma_z = sqrt(b*b*density_miy(a, 0, M, a, b));
 
         vz  = rand_normal(0, sigma_z);
         vR  = rand_normal(0, sigma_rad);
@@ -56,7 +55,6 @@ void miyamoto_disk(double *Pos, double *Vel, double *Mass, int *i, const int Nl,
         vx  = vR*cos(phi);
         vy  = vR*sin(phi);
         
-        r   = sqrt(x*x + y*y);    
         S   = sqrt(r*r+pow(a+sqrt(z*z+b*b),2));
         Om  = pow(S,-1.5);
 
