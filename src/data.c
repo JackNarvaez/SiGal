@@ -62,6 +62,7 @@ void read_data(const char *File_address, double *Pos, double *Vel, double *Mass,
                 token = strtok(NULL, "\t");
             }
             Mass[row] = atof(token);
+            token = strtok(NULL, "\t");
             i[row] = atoi(token);
             row += 1;
         }
