@@ -8,14 +8,14 @@
 void galaxy_collision(double *Pos, double *Vel, double *Mass, int *i, const int Nl, const int N, const double R, const double M, const int I) {
     // N = 1200 
     // Parameters for each galaxy (Total N, mass and R)
-    const int N_1  = N-5000;  // 700
-    const int N_2  = N-7000;  // 500
+    const int N_1  = N-10000;  // 700
+    const int N_2  = N-2000;  // 500
     const int Nl_1 = (Nl * N_1) / (N_1 + N_2);
     const int Nl_2 = Nl - Nl_1;                
 
     const double R_1 = R * 12.0;
-    const double R_2 = R * 6.0;
-    const double M_1 = 1.;
+    const double R_2 = R * 2.0;
+    const double M_1 = 10.;
     const double M_2 = .6;
 
     // GALAXY 1
@@ -61,7 +61,7 @@ void galaxy_collision(double *Pos, double *Vel, double *Mass, int *i, const int 
     kuzmin_disk(Pos + 3 * (Nl_1), Vel + 3 * (Nl_1), Mass + Nl_1, i + Nl_1, N_D_2, N_D_T_2, R_D_2, M_D_2, I + 3);
     // Bulge
     const double M_B_2    = 0.1 * M_D_2;
-    const double R_B_2    = 1.5 * R_D_2;
+    const double R_B_2    = 0.5 * R_D_2;
     //const int N_B_2 = Nl_2 * (1.0 / 5.0);
     const int N_B_2 = static_cast<int>(std::round(Nl_2 * (1.0 / 5.0)));
 
@@ -75,13 +75,13 @@ void galaxy_collision(double *Pos, double *Vel, double *Mass, int *i, const int 
     frm2com(Pos + 3 * Nl_1, Vel + 3 * Nl_1, Mass + Nl_1, Nl_2);
 
     // Separation of galaxy
-    const double d_x = 8.0;   
-    const double d_y = 5.0; 
+    const double d_x = 18.0;   
+    const double d_y = 20.0; 
     const double d_z = 0.0;   
 
     // Compute the direction from Plummer galaxy to Kuzmin galaxy center
-    double dir_x = -d_x;  // Direction towards the center of Kuzmin
-    double dir_y = -d_y;
+    double dir_x = -d_x;  
+    double dir_y = -d_y + 1.0;
     double dir_z = -d_z;
     double norm = sqrt(dir_x * dir_x + dir_y * dir_y + dir_z * dir_z);
 
