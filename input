@@ -2,6 +2,6 @@
 1.0     # M : Mass of Galaxy
 10.0    # r : Radius of Galaxy
 0.001   # dt: Time step
-100000  # steps: Evolution steps
+10000   # steps: Evolution steps
 100     # jump: Data storage interval
-ISOTHERMAL  # Setup: PLUMMER, HERNQUIST, ISOTHERMAL, EXPONENTIAL, KEPLER, KUZMIN, MIYAMOTO, MERGER, MWG1
+PLUMMER # Setup: PLUMMER, HERNQUIST, ISOTHERMAL, EXPONENTIAL, KEPLER, KUZMIN, MIYAMOTO, MERGER, MWG1, MWG2

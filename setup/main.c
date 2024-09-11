@@ -14,6 +14,7 @@
 #include "miyamoto.h"
 #include "merger.h"
 #include "mwg1.h"
+#include "mwg2.h"
 
 #define SETUP_NAME_SIZE 32
 
@@ -102,6 +103,8 @@ int main(int argc, char** argv) {
         galaxy_collision(bd.r, bd.v, bd.m, bd.i, len[pId], N, R, M, 0);
     }else if (strcmp(setup_name, "MWG1") == 0) {
         mwg1(bd.r, bd.v, bd.m, bd.i, len[pId], N, R, M, 0);
+    }else if (strcmp(setup_name, "MWG2") == 0) {
+        mwg2(bd.r, bd.v, bd.m, bd.i, len[pId], N, R, M, 0);
     }else {
         fprintf(stderr, "Unknown setup: %s\n", setup_name);
         MPI_Finalize();
