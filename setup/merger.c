@@ -8,8 +8,8 @@
 void galaxy_collision(double *Pos, double *Vel, double *Mass, int *i, const int Nl, const int N, const double R, const double M, const int I) {
     // N = 1200 
     // Parameters for each galaxy (Total N, mass and R)
-    const int N_1  = N-400;  // 700
-    const int N_2  = N-2000;  // 500
+    const int N_1  = N-4000;  // 700
+    const int N_2  = N-20000;  // 500
     const int Nl_1 = (Nl * N_1) / (N_1 + N_2);
     const int Nl_2 = Nl - Nl_1;                
 
