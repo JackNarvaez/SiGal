@@ -8,7 +8,7 @@
 void galaxy_collision(double *Pos, double *Vel, double *Mass, int *i, const int Nl, const int N, const double R, const double M, const int I) {
     // N = 1200 
     // Parameters for each galaxy (Total N, mass and R)
-    const int N_1  = N-10000;  // 700
+    const int N_1  = N-400;  // 700
     const int N_2  = N-2000;  // 500
     const int Nl_1 = (Nl * N_1) / (N_1 + N_2);
     const int Nl_2 = Nl - Nl_1;                
@@ -32,15 +32,15 @@ void galaxy_collision(double *Pos, double *Vel, double *Mass, int *i, const int 
     kuzmin_disk(Pos, Vel, Mass, i, N_D_1, N_D_T_1, R_D_1, M_D_1, I);
     // Bulge
     const double M_B_1    = 0.1 * M_D_1;
-    const double R_B_1    = 1.5 * R_D_1;
+    const double R_B_1    = 0.5 * R_D_1;
     //const int N_B_1 = Nl_1 * (1.0 / 7.0);
     const int N_B_1 = static_cast<int>(std::round(Nl_1 * (1.0 / 7.0)));
 
 
     plummer_dist(Pos + 3 * N_D_1, Vel + 3 * N_D_1, Mass + N_D_1, i + N_D_1, N_B_1, N_B_T_1, R_B_1, M_B_1, I + 1);
     // Dark Halo
-    const double M_H_1    = 20. * M_D_1;
-    const double R_H_1    = 250. * R_D_1;
+    const double M_H_1    = 3. * M_D_1;
+    const double R_H_1    = 3. * R_D_1;
     const int N_H_1 = Nl_1 - N_D_1 - N_B_1;  // Asigna lo que falta al halo
 
     plummer_dist(Pos + 3 * (N_D_1 + N_B_1), Vel + 3 * (N_D_1 + N_B_1), Mass + N_D_1 + N_B_1, i + N_D_1 + N_B_1, N_H_1, N_H_T_1, R_H_1, M_H_1, I + 2);
@@ -67,21 +67,21 @@ void galaxy_collision(double *Pos, double *Vel, double *Mass, int *i, const int 
 
     plummer_dist(Pos + 3 * (Nl_1 + N_D_2), Vel + 3 * (Nl_1 + N_D_2), Mass + Nl_1 + N_D_2, i + Nl_1 + N_D_2, N_B_2, N_B_T_2, R_B_2, M_B_2, I + 4);   
     // Dark Halo
-    const double M_H_2    = 20 * M_D_2;
-    const double R_H_2    = 200*R_D_2;
+    const double M_H_2    = 3 * M_D_2;
+    const double R_H_2    = 3*R_D_2;
     const int N_H_2 = Nl_2 - N_B_2 - N_D_2;
     plummer_dist(Pos + 3 * (Nl_1 + N_D_2 + N_B_2), Vel + 3 * (Nl_1 + N_D_2 + N_B_2), Mass + Nl_1 + N_D_2 + N_B_2, i + Nl_1 + N_D_2 + N_B_2, N_H_2, N_H_T_2, R_H_2, M_H_2, I + 5);
     
     frm2com(Pos + 3 * Nl_1, Vel + 3 * Nl_1, Mass + Nl_1, Nl_2);
 
     // Separation of galaxy
-    const double d_x = 18.0;   
-    const double d_y = 20.0; 
+    const double d_x = 12.0;   
+    const double d_y = 10.0; 
     const double d_z = 0.0;   
 
     // Compute the direction from Plummer galaxy to Kuzmin galaxy center
     double dir_x = -d_x;  
-    double dir_y = -d_y + 1.0;
+    double dir_y = -d_y;
     double dir_z = -d_z;
     double norm = sqrt(dir_x * dir_x + dir_y * dir_y + dir_z * dir_z);
 
