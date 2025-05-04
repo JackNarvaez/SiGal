@@ -1,23 +1,9 @@
-from numpy import loadtxt, array, fromfile, float64, array
+from numpy  import array, fromfile, float64, array
+from Data   import read_parameters
 import matplotlib.pyplot as plt
 import mpl_toolkits.mplot3d.axes3d as p3
 import matplotlib.animation as animation
 plt.style.use('dark_background')
-
-def read_parameters(prmts):
-    """------------------------------------------------------------------------
-    Parameters
-    ---------------------------------------------------------------------------
-    Prmts:
-    0       # Nb: Number of bodies in the galaxy
-    1       # M : Mass of Galaxy
-    2       # r : Radius of Galaxy
-    3       # dt: Time step
-    4       # steps: Evolution steps
-    5       # jump: Data storage interval
-    ------------------------------------------------------------------------"""
-    data = loadtxt("../input")
-    return data[prmts]
 
 def read_data(file_path, N, coords):
     data = fromfile(file_path, dtype=float64)
