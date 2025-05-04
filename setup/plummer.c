@@ -3,8 +3,7 @@
 // --------------------------------------------------------------- //
 #include <math.h>
 #include "utils.h"
-
-const double sqrt2      = sqrt(2.);
+#include "constants.h"
 
 //---------------------------------------------------------------------- //
 // Probability distribution of velocity.                                 //
@@ -35,7 +34,7 @@ void plummer_dist(double *Pos, double *Vel, double *Mass, int *i, const int Nl, 
             X2  = RAND();
             X3  = RAND();
         } while (0.1*X3 < g(X2));
-        Ve = sqrt2*sqrt(M)*pow(1.+r*r, -0.25)*X2;
+        Ve = SQRT2*sqrt(M)*pow(1.+r*r, -0.25)*X2;
         spher2cartes(Vel + 3*ii, Ve);
     }
     frm2com(Pos, Vel, Mass, Nl);

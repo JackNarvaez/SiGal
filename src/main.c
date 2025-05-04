@@ -19,8 +19,8 @@ The N-Body problem using MPI
 int main(int argc, char** argv) {
     int pId;                        // Process rank
     int nP;                         // Number of processes
-    int tag{0};                     // Tag message
-    int root{0};                    // Root process
+    int tag = 0;                     // Tag message
+    int root = 0;                    // Root process
     double prmts[6];
     char setup_name[SETUP_NAME_SIZE];  // Buffer para almacenar el nombre del setup
 
@@ -33,16 +33,22 @@ int main(int argc, char** argv) {
     int steps = (int)prmts[4];      // Evolution steps
     int jump  = (int) prmts[5];     // Data storage interval
     MPI_Status status;
-
     body bd;                        // Bodies
 
     /*Initializes MPI*/
     MPI_Init(&argc, &argv);
+
+    int initialized;
+    MPI_Initialized(&initialized);
+    if (!initialized) {
+        printf("MPI not initialized\n");
+    }
+    
     MPI_Comm_size(MPI_COMM_WORLD, &nP);
     MPI_Comm_rank(MPI_COMM_WORLD, &pId);
 
     int maxdeep = (int) log2(nP);
-    
+
     // Length of each proccess
     int len[nP], counts[nP], displacements3[nP], displacements1[nP];
 

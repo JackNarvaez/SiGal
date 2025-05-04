@@ -1,11 +1,11 @@
 #include <math.h>
+#include <stdlib.h>
 #include "utils.h"
+#include "constants.h"
 
 #define Q   1.5     // Toomre Parameter for Kuzmin galaxy
-#define TPI (2 * M_PI)
-#define SQRT2 sqrt(2)
 
-using F_ROOT = double(double, double);
+typedef double (*F_ROOT)(double, double);
 
 double rndm(double min, double max) {
     return min + (max - min) * RAND();

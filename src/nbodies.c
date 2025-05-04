@@ -1,5 +1,5 @@
 #include <mpi.h>
-#include <algorithm>
+//#include <algorithm>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -36,7 +36,7 @@ bool FarDistance(const double* Pos, const Node* node)
     double dx = node->max[0] - node->min[0];
     double dy = node->max[1] - node->min[1];
     double dz = node->max[2] - node->min[2];
-    double side = std::max({dx, dy, dz});
+    double side = fmax(dx, fmax(dy, dz));
 
     return side*side < THETA2*d2;
 }

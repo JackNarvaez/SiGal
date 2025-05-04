@@ -2,8 +2,10 @@
 #ifndef UTILS_H_
 #define UTILS_H_
 
+#include <stdlib.h>
+
 #define RAND() ((double)rand()/(double)(RAND_MAX))
-using F_ROOT = double(double, double);
+typedef double (*F_ROOT)(double, double);
 
 // Prototipos de funciones comunes
 double rand_normal(double, double);

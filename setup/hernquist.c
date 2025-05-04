@@ -4,9 +4,7 @@
 
 #include <math.h>
 #include "utils.h"
-
-const double TPI        = 2*M_PI;
-const double sqrt2      = sqrt(2.);
+#include "constants.h"
 
 //---------------------------------------------------------------------- //
 // Probability distribution of velocity.                                 //
@@ -38,7 +36,7 @@ void hernquist_dist(double *Pos, double *Vel, double *Mass, int *i, const int Nl
             X2 = RAND();
             X3 = RAND();
         } while (X3 > h_g(X2));
-        Ve =  sqrt2*sqrt(M)*sqrt(1.0 / (1.0 +  r))*X2;
+        Ve =  SQRT2*sqrt(M)*sqrt(1.0 / (1.0 +  r))*X2;
         spher2cartes(Vel + 3 * ii, Ve);
     }
 

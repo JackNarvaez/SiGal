@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
     int N     = (int) prmts[0];     // Total number of bodies
     double M  = prmts[1];           // Total Mass of Galaxy
     double R  = prmts[2];           // Parametrized Radius
-    int root{0};                    // Root process
+    int root  = 0;                    // Root process
     int seed  = 1234;
 
     // Inicializar MPI

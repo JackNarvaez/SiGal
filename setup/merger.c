@@ -1,5 +1,5 @@
 #include <math.h>
-#include <iostream>
+#include <stdio.h>
 #include "utils.h"
 #include "plummer.h"
 #include "kuzmin.h"
@@ -26,7 +26,7 @@ void galaxy_collision(double *Pos, double *Vel, double *Mass, int *i, const int 
     const double M_D_1    = M_1;
     const double R_D_1    = R_1;
     //const int N_D_1 = Nl_1 * (3.0 / 7.0);
-    const int N_D_1 = static_cast<int>(std::round(Nl_1 * (3.0 / 7.0)));
+    const int N_D_1 = (int)round(Nl_1 * (3.0 / 7.0));
 
 
     kuzmin_disk(Pos, Vel, Mass, i, N_D_1, N_D_T_1, R_D_1, M_D_1, I);
@@ -34,7 +34,8 @@ void galaxy_collision(double *Pos, double *Vel, double *Mass, int *i, const int 
     const double M_B_1    = 0.1 * M_D_1;
     const double R_B_1    = 0.5 * R_D_1;
     //const int N_B_1 = Nl_1 * (1.0 / 7.0);
-    const int N_B_1 = static_cast<int>(std::round(Nl_1 * (1.0 / 7.0)));
+    const int N_B_1 = (int)round(Nl_1 * (1.0 / 7.0));
+
 
 
     plummer_dist(Pos + 3 * N_D_1, Vel + 3 * N_D_1, Mass + N_D_1, i + N_D_1, N_B_1, N_B_T_1, R_B_1, M_B_1, I + 1);
@@ -55,7 +56,8 @@ void galaxy_collision(double *Pos, double *Vel, double *Mass, int *i, const int 
     const double M_D_2    = M_2;
     const double R_D_2    = R_2;
     //const int N_D_2 = Nl_2 * (2.0 / 5.0);
-    const int N_D_2 = static_cast<int>(std::round(Nl_2 * (2.0 / 5.0)));
+    const int N_D_2 = (int)round(Nl_1 * (2.0 / 5.0));
+
 
 
     kuzmin_disk(Pos + 3 * (Nl_1), Vel + 3 * (Nl_1), Mass + Nl_1, i + Nl_1, N_D_2, N_D_T_2, R_D_2, M_D_2, I + 3);
@@ -63,7 +65,8 @@ void galaxy_collision(double *Pos, double *Vel, double *Mass, int *i, const int 
     const double M_B_2    = 0.1 * M_D_2;
     const double R_B_2    = 0.5 * R_D_2;
     //const int N_B_2 = Nl_2 * (1.0 / 5.0);
-    const int N_B_2 = static_cast<int>(std::round(Nl_2 * (1.0 / 5.0)));
+    const int N_B_2 = (int)round(Nl_1 * (1.0 / 5.0));
+
 
     plummer_dist(Pos + 3 * (Nl_1 + N_D_2), Vel + 3 * (Nl_1 + N_D_2), Mass + Nl_1 + N_D_2, i + Nl_1 + N_D_2, N_B_2, N_B_T_2, R_B_2, M_B_2, I + 4);   
     // Dark Halo

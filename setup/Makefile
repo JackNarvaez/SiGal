@@ -1,9 +1,9 @@
-CC=mpic++
+CC=mpicc
 CFLAGS=-Wall -Werror
 LDFLAGS=-L/usr/local/lib -lgsl -lgslcblas -lm
 COPTS=-O0
-DEPS = ../src/structures.h ../src/data.h utils.h plummer.h hernquist.h isothermal.h exponential.h kepler.h kuzmin.h miyamoto.h merger.h mwg1.h mwg2.h
-SRC=main.c ../src/data.c utils.c plummer.c hernquist.c isothermal.c exponential.c kepler.c kuzmin.c miyamoto.c merger.c mwg1.c mwg2.c
+DEPS = ../src/structures.h ../src/data.h utils.h constants.h plummer.h hernquist.h isothermal.h exponential.h kepler.h kuzmin.h miyamoto.h merger.h mwg1.h mwg2.h
+SRC=main.c ../src/data.c utils.c constants.c plummer.c hernquist.c isothermal.c exponential.c kepler.c kuzmin.c miyamoto.c merger.c mwg1.c mwg2.c
 OBJ=${SRC:.c=.o}
 
 %.o: %.c $(DEPS)
